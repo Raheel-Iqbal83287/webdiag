@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
 import { jsPDF } from "jspdf";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import { severityColor, formatDate } from "../lib/utils";
 import { moduleDefs } from "../lib/modules";
 import { isProTier } from "../lib/tier";
@@ -216,15 +217,33 @@ export default function Dashboard({ auditId, onBack }: Props) {
     setShowExport(false);
   }
 
-  function exportDOC() {
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${a.name || "Audit Report"}</title></head><body>
-<h1>${a.name || "Untitled Audit"}</h1>
-<p>Source: ${a.sourceType} — ${a.sourcePath}<br>Date: ${formatDate(a.createdAt)}</p>
-<h2>Score: ${a.overallScore ?? "N/A"}/100</h2>
-<p>Issues: ${a.criticalIssues ?? 0} Critical, ${a.highIssues ?? 0} High, ${a.mediumIssues ?? 0} Medium, ${a.lowIssues ?? 0} Low</p>
-${modIssues.map((m: any) => `<h3>${m.moduleName || m.moduleId} (${m.score}/100)</h3>${(m.issues || []).map((i: any) => `<p><strong>[${i.severity}] ${i.title}</strong>${i.filePath ? `<br><em>${i.filePath}</em>` : ""}<br>${i.description}</p>`).join("")}`).join("")}
-</body></html>`;
-    downloadBlob(html, `${a.name || "audit"}-report.doc`, "application/msword");
+  async function exportDOC() {
+    const name = a.name || "Untitled Audit";
+    const children: any[] = [
+      new Paragraph({ text: name, heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ children: [new TextRun({ text: `${a.sourceType} — ${a.sourcePath}`, size: 20, color: "64748b" })] }),
+      new Paragraph({ children: [new TextRun({ text: formatDate(a.createdAt), size: 20, color: "64748b" })] }),
+      new Paragraph({ spacing: { before: 400 } }),
+      new Paragraph({ children: [new TextRun({ text: `Score: ${a.overallScore ?? "N/A"}/100`, size: 32, bold: true })] }),
+      new Paragraph({ children: [new TextRun({ text: `Issues: ${a.criticalIssues ?? 0} Critical, ${a.highIssues ?? 0} High, ${a.mediumIssues ?? 0} Medium, ${a.lowIssues ?? 0} Low`, size: 20 })] }),
+      new Paragraph({ spacing: { before: 400 } }),
+    ];
+    modIssues.forEach((m: any) => {
+      children.push(new Paragraph({ text: `${m.moduleName || m.moduleId} (${m.score}/100)`, heading: HeadingLevel.HEADING_2 }));
+      (m.issues || []).forEach((i: any) => {
+        children.push(new Paragraph({ spacing: { before: 200 }, children: [
+          new TextRun({ text: `[${i.severity.toUpperCase()}] `, bold: true, size: 20, color: i.severity === "critical" ? "dc2626" : i.severity === "high" ? "f59e0b" : i.severity === "medium" ? "3b82f6" : "94a3b8" }),
+          new TextRun({ text: i.title, bold: true, size: 20 }),
+        ] }));
+        if (i.filePath) children.push(new Paragraph({ children: [new TextRun({ text: i.filePath, size: 18, italics: true, color: "64748b" })] }));
+        children.push(new Paragraph({ children: [new TextRun({ text: i.description, size: 18 })] }));
+      });
+    });
+    const doc = new Document({ sections: [{ children }] });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const aEl = document.createElement("a"); aEl.href = url; aEl.download = `${name.replace(/[^a-zA-Z0-9]/g, "_")}-report.docx`; aEl.click();
+    URL.revokeObjectURL(url);
     setShowExport(false);
   }
 
