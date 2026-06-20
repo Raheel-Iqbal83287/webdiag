@@ -5,5 +5,5 @@ export default defineConfig({
   plugins: [react()],
   root: "client",
   build: { outDir: "../dist" },
-  server: { port: 5173, proxy: { "/trpc": "http://localhost:3000" } },
+  server: { port: 5173, proxy: { "/trpc": "http://localhost:3000", "/api": "http://localhost:3000" } },
 });

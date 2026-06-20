@@ -147,7 +147,7 @@ export const auditRouter = router({
         return autoFix(targetIssues, files, { dryRun: false });
     }),
 });
-async function runAuditAsync(id, sourceType, sourcePath) {
+export async function runAuditAsync(id, sourceType, sourcePath) {
     try {
         const { db } = await getDb();
         await db.update(schema.audits).set({ status: "crawling" }).where(eq(schema.audits.id, id));

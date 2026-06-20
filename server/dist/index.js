@@ -2,10 +2,13 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import multer from "multer";
+import { v4 as uuid } from "uuid";
 import { appRouter } from "./api/routers/index.js";
-import { getDb, saveDb } from "./db/index.js";
+import { getDb, saveDb, schema } from "./db/index.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logPath = path.resolve(__dirname, "../../server-startup.log");
 function log(msg) {
@@ -25,6 +28,38 @@ async function main() {
     app.use(cors());
     app.use(express.json({ limit: "50mb" }));
     app.use("/trpc", createExpressMiddleware({ router: appRouter, createContext: () => ({}) }));
+    const upload = multer({ dest: os.tmpdir() });
+    app.post("/api/upload-folder", upload.array("files"), async (req, res) => {
+        try {
+            const uploadedFiles = req.files;
+            if (!uploadedFiles || uploadedFiles.length === 0) {
+                res.status(400).json({ error: "No files uploaded" });
+                return;
+            }
+            const id = uuid();
+            const targetDir = path.join(os.tmpdir(), `webdiag-upload-${id}`);
+            fs.mkdirSync(targetDir, { recursive: true });
+            for (const f of uploadedFiles) {
+                const relPath = f.originalname;
+                const dest = path.join(targetDir, relPath);
+                fs.mkdirSync(path.dirname(dest), { recursive: true });
+                fs.renameSync(f.path, dest);
+            }
+            const name = req.body.name || `Audit - Uploaded Folder (${uploadedFiles.length} files)`;
+            const { db } = await getDb();
+            await db.insert(schema.audits).values({
+                id, name, sourceType: "folder", sourcePath: targetDir,
+                status: "pending", createdAt: new Date().toISOString(),
+            });
+            saveDb();
+            const { runAuditAsync } = await import("./api/routers/audit.js");
+            runAuditAsync(id, "folder", targetDir);
+            res.json({ id, status: "pending" });
+        }
+        catch (err) {
+            res.status(500).json({ error: err instanceof Error ? err.message : "Upload failed" });
+        }
+    });
     const clientDist = path.resolve(__dirname, "../../dist");
     if (fs.existsSync(clientDist)) {
         app.use(express.static(clientDist));

@@ -125,7 +125,7 @@ export const auditRouter = router({
   }),
 });
 
-async function runAuditAsync(id: string, sourceType: string, sourcePath: string) {
+export async function runAuditAsync(id: string, sourceType: string, sourcePath: string) {
   try {
     const { db } = await getDb();
     await db.update(schema.audits).set({ status: "crawling" }).where(eq(schema.audits.id, id));

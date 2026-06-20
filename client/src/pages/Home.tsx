@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import { trpc } from "../lib/trpc";
 import { moduleDefs } from "../lib/modules";
 
@@ -7,17 +7,46 @@ interface HomeProps {
 }
 
 export default function Home({ onAuditStarted }: HomeProps) {
-  const [sourcePath, setSourcePath] = useState("");
+  const [folderName, setFolderName] = useState("");
+  const [fileCount, setFileCount] = useState(0);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const createAudit = trpc.audit.create.useMutation({ onSuccess: (data) => onAuditStarted(data.id), onError: (err) => setError(err.message) });
+  const handleFolderSelect = () => {
+    const files = folderInputRef.current?.files;
+    if (files && files.length > 0) {
+      setFolderName(files[0].webkitRelativePath.split("/")[0]);
+      setFileCount(files.length);
+      setError("");
+    }
+  };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const files = folderInputRef.current?.files;
+    if (!files || files.length === 0) { setError("Please select a folder"); return; }
+
+    setUploading(true);
     setError("");
-    if (!sourcePath.trim()) { setError("Please provide a source path"); return; }
-    createAudit.mutate({ name: name || undefined, sourceType: "folder", sourcePath: sourcePath.trim() });
+
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i], files[i].webkitRelativePath);
+      }
+      if (name.trim()) formData.append("name", name.trim());
+
+      const res = await fetch("/api/upload-folder", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      onAuditStarted(data.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -32,21 +61,29 @@ export default function Home({ onAuditStarted }: HomeProps) {
           Scan. Analyze. <span className="relative"><span className="gradient-text">Fix.</span><span className="absolute -top-4 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded whitespace-nowrap z-10">Pro Feature</span></span>
         </h1>
         <div className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          <div className="hidden sm:block whitespace-nowrap">Comprehensive AI-powered auditing for integrity, SEO, accessibility, and compliance.</div>
-          <div className="sm:hidden">AI-powered auditing for integrity, SEO, accessibility &amp; compliance.</div>
-          <div className="hidden sm:block whitespace-nowrap">16 modules for comprehensive local folder auditing.</div>
-          <div className="sm:hidden">16 modules for comprehensive local folder auditing.</div>
-          <div className="hidden sm:block whitespace-nowrap">Check your website before deployment.</div>
-          <div className="sm:hidden">Check your website before deployment.</div>
+          16 modules for comprehensive website auditing. Upload your site folder to get started.
         </div>
       </div>
 
-      {/* Input Form */}
+      {/* Upload Form */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
         <form onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Folder Path</label>
-            <input type="text" value={sourcePath} onChange={e => setSourcePath(e.target.value)} placeholder="C:\projects\my-website" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+          <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer" onClick={() => folderInputRef.current?.click()}>
+            <input type="file" ref={folderInputRef} webkitdirectory="" multiple className="hidden" onChange={handleFolderSelect} />
+            <svg className="w-12 h-12 mx-auto text-slate-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            {folderName ? (
+              <div>
+                <p className="text-indigo-700 font-semibold">{folderName}</p>
+                <p className="text-sm text-slate-500 mt-1">{fileCount} files selected</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-slate-700 font-semibold">Click to select a website folder</p>
+                <p className="text-sm text-slate-400 mt-1">Select your project folder to upload and audit</p>
+              </div>
+            )}
           </div>
 
           <div className="mt-5">
@@ -63,13 +100,13 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={createAudit.isPending || !sourcePath.trim()}
+            disabled={uploading || !folderName}
             className="mt-6 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-200 hover:shadow-lg active:scale-[0.98]"
           >
-            {createAudit.isPending ? (
+            {uploading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                Starting Audit...
+                Uploading & Starting Audit...
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
