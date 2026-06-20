@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "../lib/trpc";
 import { formatDate } from "../lib/utils";
+import { isProTier } from "../lib/tier";
 
 interface Props { onSelectAudit: (id: string) => void; onCompare: (id1: string, id2: string) => void; onBack: () => void }
 
@@ -14,6 +15,7 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
   const { data: audits, isLoading, error } = trpc.audit.list.useQuery();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const isPro = isProTier();
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -35,25 +37,25 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
 
   if (error) return (
     <div className="text-center py-20">
-      <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-50 flex items-center justify-center">
+      <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center ${isPro ? "bg-red-900/20" : "bg-red-50"}`}>
         <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
       </div>
-      <h2 className="text-xl font-bold text-slate-800 mb-2">Failed to load audits</h2>
-      <p className="text-slate-500 text-sm">{error.message}</p>
+      <h2 className={`text-xl font-bold mb-2 ${isPro ? "text-white" : "text-slate-800"}`}>Failed to load audits</h2>
+      <p className={`text-sm ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>{error.message}</p>
     </div>
   );
 
   if (!audits || audits.length === 0) return (
     <div className="text-center py-20">
-      <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-100 flex items-center justify-center">
-        <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center ${isPro ? "bg-slate-800" : "bg-slate-100"}`}>
+        <svg className={`w-10 h-10 ${isPro ? "text-slate-600" : "text-slate-300"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       </div>
-      <h2 className="text-xl font-bold text-slate-800 mb-2">No audits yet</h2>
-      <p className="text-slate-500 text-sm">Run your first audit to see results here.</p>
+      <h2 className={`text-xl font-bold mb-2 ${isPro ? "text-white" : "text-slate-800"}`}>No audits yet</h2>
+      <p className={`text-sm ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>Run your first audit to see results here.</p>
     </div>
   );
 
@@ -63,16 +65,16 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
     <div className="animate-fadeIn">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" aria-label="Go back">
+          <button onClick={onBack} className={`p-2 rounded-lg transition-all ${isPro ? "text-indigo-300 hover:text-white hover:bg-white/5" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`} aria-label="Go back">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div>
-          <h1 className="text-2xl font-bold text-slate-900">Audit History <span className="ml-2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle">Pro</span></h1>
-          <p className="text-sm text-slate-500 mt-0.5">{displayAudits.length} audit{displayAudits.length !== 1 ? "s" : ""} total</p>
+          <h1 className={`text-2xl font-bold ${isPro ? "text-white" : "text-slate-900"}`}>Audit History <span className="ml-2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle">Pro</span></h1>
+          <p className={`text-sm mt-0.5 ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>{displayAudits.length} audit{displayAudits.length !== 1 ? "s" : ""} total</p>
         </div>
           </div>
         {selectedIds.length === 2 && (
-          <button onClick={() => onCompare(selectedIds[0], selectedIds[1])} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all shadow-sm">
+          <button onClick={() => onCompare(selectedIds[0], selectedIds[1])} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm ${isPro ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
@@ -81,18 +83,18 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-sm">
+      <div className={`rounded-2xl border overflow-x-auto shadow-sm ${isPro ? "bg-slate-900/50 border-indigo-900/30" : "bg-white border-slate-200"}`}>
         <table className="w-full text-sm min-w-[640px]">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
+            <tr className={`border-b ${isPro ? "bg-slate-800/50 border-indigo-900/20" : "bg-slate-50 border-slate-200"}`}>
               <th className="p-4 w-10"></th>
-              <th className="p-4 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Name</th>
-              <th className="p-4 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Source</th>
-              <th className="p-4 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Status</th>
-              <th className="p-4 text-right font-semibold text-slate-700 text-xs uppercase tracking-wider">Score</th>
-              <th className="p-4 text-right font-semibold text-slate-700 text-xs uppercase tracking-wider">Issues</th>
-              <th className="p-4 text-right font-semibold text-slate-700 text-xs uppercase tracking-wider">Date</th>
-              <th className="p-4 text-right font-semibold text-slate-700 text-xs uppercase tracking-wider"></th>
+              <th className={`p-4 text-left font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}>Name</th>
+              <th className={`p-4 text-left font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}>Source</th>
+              <th className={`p-4 text-left font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}>Status</th>
+              <th className={`p-4 text-right font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}>Score</th>
+              <th className={`p-4 text-right font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}>Issues</th>
+              <th className={`p-4 text-right font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}>Date</th>
+              <th className={`p-4 text-right font-semibold text-xs uppercase tracking-wider ${isPro ? "text-indigo-300" : "text-slate-700"}`}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -101,7 +103,7 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
               const isSelected = selectedIds.includes(audit.id);
               return (
                 <tr key={audit.id}
-                  className={`transition-colors cursor-pointer ${isSelected ? "bg-indigo-50" : ""}`}
+                  className={`transition-colors cursor-pointer ${isSelected ? (isPro ? "bg-indigo-900/20" : "bg-indigo-50") : ""} ${!isSelected && isPro ? "hover:bg-white/5" : ""}`}
                   onMouseEnter={() => setHoveredRow(audit.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                   onClick={() => onSelectAudit(audit.id)}
@@ -111,10 +113,10 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                   </td>
                   <td className="p-4">
-                    <span className="font-semibold text-slate-800">{audit.name || "Untitled"}</span>
+                    <span className={`font-semibold ${isPro ? "text-indigo-100" : "text-slate-800"}`}>{audit.name || "Untitled"}</span>
                   </td>
                   <td className="p-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-600">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium ${isPro ? "bg-slate-800 text-indigo-300" : "bg-slate-100 text-slate-600"}`}>
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
@@ -140,12 +142,12 @@ export default function History({ onSelectAudit, onCompare, onBack }: Props) {
                       {!audit.criticalIssues && !audit.highIssues && !audit.mediumIssues && <span className="text-slate-300">—</span>}
                     </div>
                   </td>
-                  <td className="p-4 text-right text-slate-400 text-xs">{formatDate(audit.createdAt)}</td>
+                  <td className={`p-4 text-right text-xs ${isPro ? "text-indigo-300/50" : "text-slate-400"}`}>{formatDate(audit.createdAt)}</td>
                   <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
 
                       <button aria-label="View audit" onClick={(e) => { e.stopPropagation(); onSelectAudit(audit.id); }}
-                        className={`p-1.5 rounded-lg transition-colors ${hoveredRow === audit.id ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-indigo-600"}`}>
+                        className={`p-1.5 rounded-lg transition-colors ${hoveredRow === audit.id ? "bg-indigo-600 text-white shadow-sm" : isPro ? "text-indigo-300 hover:text-white" : "text-slate-400 hover:text-indigo-600"}`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
