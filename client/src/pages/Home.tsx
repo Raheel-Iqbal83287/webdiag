@@ -134,7 +134,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
           </div>
 
           <div className="mt-5">
-            <label className={`block text-sm font-semibold mb-1.5 ${isPro ? "text-indigo-200" : "text-slate-700"}`}>Email <span className={`font-normal ${isPro ? "text-indigo-400/50" : "text-slate-400"}`}>(required for usage tracking)</span></label>
+            <label className={`block text-sm font-semibold mb-1.5 ${isPro ? "text-indigo-200" : "text-slate-700"}`}>Email {isPro ? <span className="font-normal text-indigo-400/50">(optional)</span> : <span className="font-normal text-slate-400">(required for usage tracking)</span>}</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 outline-none transition-shadow ${isPro ? "bg-slate-800/50 border-indigo-800/40 text-indigo-100 placeholder-indigo-300/30 focus:ring-indigo-500 focus:border-indigo-500" : "bg-white border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"}`} />
           </div>
 
@@ -147,7 +147,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={uploading || !folderName || !email.trim()}
+            disabled={uploading || !folderName || (!isPro && !email.trim())}
             className={`mt-6 w-full py-3.5 text-white rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] ${isPro ? "bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:from-indigo-500 hover:to-purple-500" : "bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md shadow-indigo-200 hover:shadow-lg hover:from-indigo-700 hover:to-purple-700"}`}
           >
             {uploading ? (
