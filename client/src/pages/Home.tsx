@@ -82,6 +82,18 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
       {/* Upload Form */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+        {limitReached ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Monthly Scan Limit Reached</h3>
+            <p className="text-slate-500 text-sm mb-6">Upgrade to Pro for unlimited scans and all 16 audit modules.</p>
+            <button className="py-3 px-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md shadow-indigo-200">
+              Upgrade to Pro
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
           <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-colors cursor-pointer" onClick={() => folderInputRef.current?.click()}>
             <input type="file" ref={folderInputRef} webkitdirectory="" multiple className="hidden" onChange={handleFolderSelect} />
@@ -120,15 +132,10 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={uploading || !folderName || !email.trim() || limitReached}
+            disabled={uploading || !folderName || !email.trim()}
             className="mt-6 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-200 hover:shadow-lg active:scale-[0.98]"
           >
-            {limitReached ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                Upgrade for More Scans
-              </span>
-            ) : uploading ? (
+            {uploading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                 Uploading & Starting Audit...
@@ -141,6 +148,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
             )}
           </button>
         </form>
+        )}
       </div>
 
       {/* Module Cards */}
