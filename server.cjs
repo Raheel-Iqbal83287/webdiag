@@ -1,10 +1,7 @@
-import { existsSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
-import { execSync } from "child_process";
-import { writeFileSync } from "fs";
+const { existsSync, writeFileSync } = require("fs");
+const { resolve } = require("path");
+const { execSync } = require("child_process");
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const logPath = resolve(__dirname, "server-startup.log");
 
 function log(msg) {
@@ -13,7 +10,7 @@ function log(msg) {
   console.log(msg);
 }
 
-log("Starting server.js bootstrap...");
+log("Starting server.cjs bootstrap...");
 
 const nodeModulesPath = resolve(__dirname, "node_modules");
 if (!existsSync(nodeModulesPath)) {
@@ -40,7 +37,7 @@ if (!existsSync(distPath)) {
 }
 
 try {
-  await import("./server/dist/index.js");
+  require("./server/dist/index.js");
   log("Server started");
 } catch (err) {
   log(`Server startup error: ${err.stack || err.message}`);

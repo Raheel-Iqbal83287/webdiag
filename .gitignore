@@ -1,6 +1,8 @@
 node_modules/
 .turbo/
 *.db
+server-startup.log
+data/
 *.db-journal
 .env
 .env.local
