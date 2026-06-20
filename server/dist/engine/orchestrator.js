@@ -15,47 +15,54 @@ import { auditSecurity } from "../modules/13-security/index.js";
 import { auditImageOptimization } from "../modules/15-image-optimization/index.js";
 import { auditFormsInteraction } from "../modules/16-forms-interaction/index.js";
 import { auditFinalVerification } from "../modules/14-final-verification/index.js";
+export const TIER_MODULES = {
+    basic: [
+        "01-page-existence", "04-css-js-integrity", "07-dead-links",
+        "10-accessibility", "11-performance", "13-security",
+    ],
+    pro: [
+        "01-page-existence", "02-sitemap", "03-robots-txt", "04-css-js-integrity",
+        "05-nav-consistency", "06-seo-adsense", "07-dead-links", "08-placeholder",
+        "09-layout-overflow", "10-accessibility", "11-performance",
+        "12-hosting-readiness", "13-security", "15-image-optimization",
+        "16-forms-interaction", "14-final-verification",
+    ],
+};
 export async function runAudit(files, auditId, options) {
+    const tier = options?.tier || "free";
+    const allowedModules = tier === "pro" ? TIER_MODULES.pro : TIER_MODULES.basic;
     options?.onProgress?.("Starting audit", 0);
-    const modules = [];
-    options?.onProgress?.("Auditing page existence & HTML structure...", 15);
-    modules.push(auditPageExistence(files));
-    options?.onProgress?.("Auditing sitemap...", 35);
-    modules.push(auditSitemap(files));
-    options?.onProgress?.("Auditing robots.txt...", 45);
-    modules.push(auditRobotsTxt(files));
-    options?.onProgress?.("Auditing CSS/JS integrity...", 60);
-    modules.push(auditCssJsIntegrity(files));
-    options?.onProgress?.("Auditing navigation consistency...", 70);
-    modules.push(auditNavConsistency(files));
-    options?.onProgress?.("Auditing SEO & AdSense compliance...", 78);
-    modules.push(auditSeoAdsense(files));
-    options?.onProgress?.("Checking dead links...", 83);
-    modules.push(await auditDeadLinks(files));
-    options?.onProgress?.("Auditing placeholder & content quality...", 88);
-    modules.push(auditPlaceholder(files));
-    options?.onProgress?.("Checking layout & overflow...", 91);
-    modules.push(auditLayoutOverflow(files));
-    options?.onProgress?.("Auditing accessibility...", 93);
-    modules.push(auditAccessibility(files));
-    options?.onProgress?.("Auditing performance...", 94);
-    modules.push(auditPerformance(files));
-    options?.onProgress?.("Checking hosting readiness...", 95);
-    modules.push(auditHostingReadiness(files));
-    options?.onProgress?.("Auditing security...", 96);
-    modules.push(auditSecurity(files));
-    options?.onProgress?.("Auditing image optimization...", 97);
-    modules.push(await auditImageOptimization(files));
-    options?.onProgress?.("Auditing forms & interaction...", 98);
-    modules.push(await auditFormsInteraction(files));
-    options?.onProgress?.("Running final verification...", 99);
-    modules.push(auditFinalVerification(files));
+    const modulesResult = [];
+    const moduleRunners = [
+        { id: "01-page-existence", run: () => auditPageExistence(files), label: "Auditing page existence & HTML structure..." },
+        { id: "02-sitemap", run: () => auditSitemap(files), label: "Auditing sitemap..." },
+        { id: "03-robots-txt", run: () => auditRobotsTxt(files), label: "Auditing robots.txt..." },
+        { id: "04-css-js-integrity", run: () => auditCssJsIntegrity(files), label: "Auditing CSS/JS integrity..." },
+        { id: "05-nav-consistency", run: () => auditNavConsistency(files), label: "Auditing navigation consistency..." },
+        { id: "06-seo-adsense", run: () => auditSeoAdsense(files), label: "Auditing SEO & AdSense compliance..." },
+        { id: "07-dead-links", run: () => auditDeadLinks(files), label: "Checking dead links..." },
+        { id: "08-placeholder", run: () => auditPlaceholder(files), label: "Auditing placeholder & content quality..." },
+        { id: "09-layout-overflow", run: () => auditLayoutOverflow(files), label: "Checking layout & overflow..." },
+        { id: "10-accessibility", run: () => auditAccessibility(files), label: "Auditing accessibility..." },
+        { id: "11-performance", run: () => auditPerformance(files), label: "Auditing performance..." },
+        { id: "12-hosting-readiness", run: () => auditHostingReadiness(files), label: "Checking hosting readiness..." },
+        { id: "13-security", run: () => auditSecurity(files), label: "Auditing security..." },
+        { id: "15-image-optimization", run: () => auditImageOptimization(files), label: "Auditing image optimization..." },
+        { id: "16-forms-interaction", run: () => auditFormsInteraction(files), label: "Auditing forms & interaction..." },
+        { id: "14-final-verification", run: () => auditFinalVerification(files), label: "Running final verification..." },
+    ];
+    for (const mod of moduleRunners) {
+        if (!allowedModules.includes(mod.id))
+            continue;
+        options?.onProgress?.(mod.label, 15 + (moduleRunners.indexOf(mod) * 5));
+        modulesResult.push(await mod.run());
+    }
     options?.onProgress?.("Calculating scores...", 99);
     const allIssues = [];
-    for (const mod of modules)
+    for (const mod of modulesResult)
         allIssues.push(...mod.issues);
     const severityCounts = countBySeverity(allIssues);
-    const overallScore = calculateOverallScore(modules);
+    const overallScore = calculateOverallScore(modulesResult);
     options?.onProgress?.("Generating report...", 90);
     const audit = {
         id: auditId,
@@ -69,7 +76,7 @@ export async function runAudit(files, auditId, options) {
         highIssues: severityCounts.high,
         mediumIssues: severityCounts.medium,
         lowIssues: severityCounts.low,
-        moduleResults: modules,
+        moduleResults: modulesResult,
         crawledFiles: files,
         createdAt: new Date().toISOString(),
         completedAt: new Date().toISOString(),

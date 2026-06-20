@@ -14,6 +14,11 @@ export default function Home({ onAuditStarted }: HomeProps) {
   const [uploading, setUploading] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
+  const usage = trpc.usage.status.useQuery();
+  const isPro = false; // Will be toggled when auth/payments added
+  const remaining = isPro ? Infinity : (usage.data?.remaining ?? 0);
+  const limitReached = !isPro && remaining <= 0;
+
   const handleFolderSelect = () => {
     const files = folderInputRef.current?.files;
     if (files && files.length > 0) {
@@ -64,6 +69,13 @@ export default function Home({ onAuditStarted }: HomeProps) {
           Comprehensive AI-powered Auditing for Integrity, SEO, Accessibility, and Compliance.
           Get your website scanned before Deployment.
         </div>
+        {!isPro && (
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Free tier: {remaining} scan{remaining !== 1 ? "s" : ""} remaining this month
+            {limitReached && <span className="text-red-600 font-semibold"> — limit reached</span>}
+          </div>
+        )}
       </div>
 
       {/* Upload Form */}
@@ -101,10 +113,15 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={uploading || !folderName}
+            disabled={uploading || !folderName || limitReached}
             className="mt-6 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-200 hover:shadow-lg active:scale-[0.98]"
           >
-            {uploading ? (
+            {limitReached ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                Upgrade for More Scans
+              </span>
+            ) : uploading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                 Uploading & Starting Audit...
@@ -123,18 +140,27 @@ export default function Home({ onAuditStarted }: HomeProps) {
       <div>
         <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
           <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-          16 Audit Modules
+          {isPro ? "16" : "6"} Audit Modules
+          {!isPro && <span className="text-xs font-normal text-slate-400 ml-2">({moduleDefs.length - 6} locked — upgrade to Pro)</span>}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {moduleDefs.map(({ name, desc, icon, color }) => (
-            <div key={name} className="group bg-white rounded-xl border border-slate-200 p-4 card-hover">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 shadow-sm`}>
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-                </svg>
+          {moduleDefs.map((mod) => (
+            <div key={mod.id} className={`group bg-white rounded-xl border p-4 card-hover ${mod.tier === "pro" && !isPro ? "border-slate-200 opacity-60" : "border-slate-200"}`}>
+              <div className="flex items-start justify-between mb-3">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center shadow-sm ${mod.tier === "pro" && !isPro ? "grayscale" : ""}`}>
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={mod.icon} />
+                  </svg>
+                </div>
+                {mod.tier === "pro" && !isPro && (
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded uppercase tracking-wider">Pro</span>
+                )}
+                {mod.tier === "free" && (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase tracking-wider">Free</span>
+                )}
               </div>
-              <div className="font-semibold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">{name}</div>
-              <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{desc}</div>
+              <div className="font-semibold text-slate-800 text-sm">{mod.name}</div>
+              <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{mod.desc}</div>
             </div>
           ))}
         </div>

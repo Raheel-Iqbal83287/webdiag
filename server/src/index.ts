@@ -30,11 +30,19 @@ async function main() {
   app.use(cors());
   app.use(express.json({ limit: "50mb" }));
 
-  app.use("/trpc", createExpressMiddleware({ router: appRouter, createContext: () => ({}) }));
+  app.use("/trpc", createExpressMiddleware({ router: appRouter, createContext: ({ req }) => ({ ip: req.ip || req.socket.remoteAddress || "unknown" }) }));
 
   const upload = multer({ dest: os.tmpdir() });
   app.post("/api/upload-folder", upload.array("files"), async (req, res) => {
     try {
+      const ip = req.ip || req.socket.remoteAddress || "unknown";
+      const { checkUsage, incrementUsage } = await import("./api/routers/usage.js");
+      const usage = await checkUsage(ip);
+      if (!usage.allowed) {
+        res.status(403).json({ error: `Free tier limit reached. Upgrade to Pro for unlimited scans.` });
+        return;
+      }
+
       const uploadedFiles = req.files as Express.Multer.File[];
       if (!uploadedFiles || uploadedFiles.length === 0) {
         res.status(400).json({ error: "No files uploaded" });
@@ -61,10 +69,12 @@ async function main() {
       });
       saveDb();
 
-      const { runAuditAsync } = await import("./api/routers/audit.js");
-      runAuditAsync(id, "folder", targetDir);
+      await incrementUsage(ip);
 
-      res.json({ id, status: "pending" as const });
+      const { runAuditAsync } = await import("./api/routers/audit.js");
+      runAuditAsync(id, "folder", targetDir, "free");
+
+      res.json({ id, status: "pending" as const, tier: "free" as const });
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : "Upload failed" });
     }

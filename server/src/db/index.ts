@@ -29,6 +29,16 @@ export async function getDb() {
   }
 
   sqliteInstance.run(`
+    CREATE TABLE IF NOT EXISTS usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_ip TEXT NOT NULL,
+      month TEXT NOT NULL,
+      scan_count INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(client_ip, month)
+    )
+  `);
+
+  sqliteInstance.run(`
     CREATE TABLE IF NOT EXISTS audits (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,

@@ -8,13 +8,17 @@ import { getDb, saveDb } from "../../db/index.js";
 import { schema } from "../../db/index.js";
 import { eq } from "drizzle-orm";
 import fs from "fs";
+import { checkUsage, incrementUsage } from "./usage.js";
 
 const auditProgress = new Map<string, { progress: number; currentStep: string }>();
 
 export const auditRouter = router({
   create: publicProcedure
     .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const usage = await checkUsage(ctx.ip);
+      if (!usage.allowed) throw new Error(`Free tier limit reached (${usage.remaining} scans remaining this month). Upgrade to Pro for unlimited scans.`);
+
       const { db } = await getDb();
       const id = uuid();
       if (!fs.existsSync(input.sourcePath)) throw new Error(`Folder not found: ${input.sourcePath}`);
@@ -22,10 +26,12 @@ export const auditRouter = router({
       await db.insert(schema.audits).values({ id, name: input.name || `Audit - ${new Date().toLocaleDateString()}`, sourceType: input.sourceType, sourcePath: input.sourcePath, status: "pending", createdAt: new Date().toISOString() });
       saveDb();
 
-      auditProgress.set(id, { progress: 0, currentStep: "Initializing..." });
-      runAuditAsync(id, input.sourceType, input.sourcePath).catch(() => {});
+      await incrementUsage(ctx.ip);
 
-      return { id, status: "pending" as const };
+      auditProgress.set(id, { progress: 0, currentStep: "Initializing..." });
+      runAuditAsync(id, input.sourceType, input.sourcePath, "free").catch(() => {});
+
+      return { id, status: "pending" as const, tier: "free" as const };
     }),
 
   status: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
@@ -125,7 +131,7 @@ export const auditRouter = router({
   }),
 });
 
-export async function runAuditAsync(id: string, sourceType: string, sourcePath: string) {
+export async function runAuditAsync(id: string, sourceType: string, sourcePath: string, tier: "free" | "pro" = "free") {
   try {
     const { db } = await getDb();
     await db.update(schema.audits).set({ status: "crawling" }).where(eq(schema.audits.id, id));
@@ -138,7 +144,7 @@ export async function runAuditAsync(id: string, sourceType: string, sourcePath: 
     await db.update(schema.audits).set({ status: "auditing" }).where(eq(schema.audits.id, id));
     saveDb();
 
-    const audit = await runAudit(files, id, { onProgress: (step, progress) => { auditProgress.set(id, { progress: 20 + Math.round(progress * 0.75), currentStep: step }); } });
+    const audit = await runAudit(files, id, { onProgress: (step, progress) => { auditProgress.set(id, { progress: 20 + Math.round(progress * 0.75), currentStep: step }); }, tier });
 
     await db.update(schema.audits).set({ status: "completed", overallScore: audit.overallScore ?? null, totalIssues: audit.totalIssues, criticalIssues: audit.criticalIssues, highIssues: audit.highIssues, mediumIssues: audit.mediumIssues, lowIssues: audit.lowIssues, moduleResults: JSON.stringify(audit.moduleResults), crawledFiles: JSON.stringify(audit.crawledFiles), completedAt: new Date().toISOString() }).where(eq(schema.audits.id, id));
     saveDb();
