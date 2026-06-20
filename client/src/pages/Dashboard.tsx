@@ -501,6 +501,15 @@ export default function Dashboard({ auditId, onBack }: Props) {
                               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                 <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ backgroundColor: severityColor(issue.severity) + "15", color: severityColor(issue.severity) }}>{issue.severity}</span>
                                 <span className="text-sm font-medium text-slate-800">{issue.title}</span>
+                                {fixMap.get(issue.id)?.canFix && (
+                                  <button onClick={(e) => { e.stopPropagation(); handleFix([issue.id]); }} disabled={fixBusy.includes(issue.id)}
+                                    className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50">
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    {fixBusy.includes(issue.id) ? "..." : "Fix"}
+                                  </button>
+                                )}
                               </div>
                               <p className="text-xs text-slate-500 mt-1 leading-relaxed">{issue.filePath ? issue.description.replace(issue.filePath, "").replace(/:/g, "").replace(/[\s,;.\-]+$/, "") : issue.description}</p>
                               {issue.filePath && (
@@ -516,15 +525,6 @@ export default function Dashboard({ auditId, onBack }: Props) {
                                     <span>{issue.suggestion}</span>
                                   </div>
                                 </div>
-                              )}
-                              {fixMap.get(issue.id)?.canFix && (
-                                <button onClick={() => handleFix([issue.id])} disabled={fixBusy.includes(issue.id)}
-                                  className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50">
-                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                  </svg>
-                                  {fixBusy.includes(issue.id) ? "Checking..." : "Fix"}
-                                </button>
                               )}
                             </div>
                           </div>
