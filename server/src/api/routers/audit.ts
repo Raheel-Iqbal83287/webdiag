@@ -2,27 +2,22 @@ import { z } from "zod";
 import { v4 as uuid } from "uuid";
 import { router, publicProcedure } from "../trpc.js";
 import { crawlLocalFolder } from "../../crawler/local-folder.js";
-import { crawlUrl } from "../../crawler/live-url.js";
-import { crawlGitHub } from "../../crawler/github-repo.js";
-import { crawlZipFile } from "../../crawler/zip-file.js";
 import { runAudit } from "../../engine/orchestrator.js";
 import { canAutoFix, autoFix } from "../../engine/auto-fix/index.js";
 import { getDb, saveDb } from "../../db/index.js";
 import { schema } from "../../db/index.js";
 import { eq } from "drizzle-orm";
 import fs from "fs";
-import os from "os";
-import path from "path";
 
 const auditProgress = new Map<string, { progress: number; currentStep: string }>();
 
 export const auditRouter = router({
   create: publicProcedure
-    .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder", "url", "github", "zip"]), sourcePath: z.string().min(1), fileBase64: z.string().optional() }))
+    .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
     .mutation(async ({ input }) => {
       const { db } = await getDb();
       const id = uuid();
-      if (input.sourceType === "folder" && !fs.existsSync(input.sourcePath)) throw new Error(`Folder not found: ${input.sourcePath}`);
+      if (!fs.existsSync(input.sourcePath)) throw new Error(`Folder not found: ${input.sourcePath}`);
 
       await db.insert(schema.audits).values({ id, name: input.name || `Audit - ${new Date().toLocaleDateString()}`, sourceType: input.sourceType, sourcePath: input.sourcePath, status: "pending", createdAt: new Date().toISOString() });
       saveDb();
@@ -130,44 +125,14 @@ export const auditRouter = router({
   }),
 });
 
-async function runAuditAsync(id: string, sourceType: string, sourcePath: string, fileBase64?: string) {
-  let cleanupZip: (() => void) | undefined;
+async function runAuditAsync(id: string, sourceType: string, sourcePath: string) {
   try {
     const { db } = await getDb();
     await db.update(schema.audits).set({ status: "crawling" }).where(eq(schema.audits.id, id));
     saveDb();
     auditProgress.set(id, { progress: 5, currentStep: "Crawling files..." });
 
-    let files: any[];
-    if (sourceType === "url") {
-      const result = await crawlUrl(sourcePath);
-      if (result.errors.length) {
-        await db.update(schema.audits).set({ status: "failed" }).where(eq(schema.audits.id, id));
-        saveDb();
-        auditProgress.set(id, { progress: 0, currentStep: `Failed: ${result.errors.join("; ")}` });
-        return;
-      }
-      files = result.files;
-    } else if (sourceType === "github") {
-      const result = await crawlGitHub(sourcePath);
-      if (result.errors.length) {
-        await db.update(schema.audits).set({ status: "failed" }).where(eq(schema.audits.id, id));
-        saveDb();
-        auditProgress.set(id, { progress: 0, currentStep: `Failed: ${result.errors.join("; ")}` });
-        return;
-      }
-      files = result.files;
-    } else if (sourceType === "zip") {
-      if (!fileBase64) throw new Error("No file data provided");
-      const zipPath = path.join(os.tmpdir(), `upload-${id}.zip`);
-      fs.writeFileSync(zipPath, Buffer.from(fileBase64, "base64"));
-      const result = await crawlZipFile(zipPath);
-      cleanupZip = result.cleanup;
-      files = result.files;
-      try { fs.unlinkSync(zipPath); } catch { /* ignore */ }
-    } else {
-      files = await crawlLocalFolder(sourcePath);
-    }
+    const files = await crawlLocalFolder(sourcePath);
 
     auditProgress.set(id, { progress: 20, currentStep: `Found ${files.length} files. Running audits...` });
     await db.update(schema.audits).set({ status: "auditing" }).where(eq(schema.audits.id, id));
@@ -186,7 +151,5 @@ async function runAuditAsync(id: string, sourceType: string, sourcePath: string,
       saveDb();
     } catch { /* ignore DB error on failure */ }
     auditProgress.set(id, { progress: 0, currentStep: `Failed: ${errorMessage}` });
-  } finally {
-    if (cleanupZip) cleanupZip();
   }
 }
