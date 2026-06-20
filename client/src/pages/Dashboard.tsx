@@ -16,6 +16,7 @@ const severityLabels = [
 export default function Dashboard({ auditId, onBack }: Props) {
   const isPro = isProTier();
   const [activeModule, setActiveModule] = useState<string | null>(null);
+  const [showExport, setShowExport] = useState(false);
   const [fixBusy, setFixBusy] = useState<string[]>([]);
   const [fixPreview, setFixPreview] = useState<any>(null);
   const [fixResults, setFixResults] = useState<any>(null);
@@ -125,6 +126,83 @@ export default function Dashboard({ auditId, onBack }: Props) {
     return (mod.issues || []).filter((i: any) => fixMap.get(i.id)?.canFix);
   }
 
+  function buildReportText() {
+    let text = `Audit Report: ${a.name || "Untitled"}\n`;
+    text += `Source: ${a.sourceType} - ${a.sourcePath}\n`;
+    text += `Date: ${formatDate(a.createdAt)}\n`;
+    text += `Score: ${a.overallScore ?? "N/A"}/100\n\n`;
+    text += `Issues: ${a.criticalIssues ?? 0} Critical, ${a.highIssues ?? 0} High, ${a.mediumIssues ?? 0} Medium, ${a.lowIssues ?? 0} Low\n\n`;
+    text += `Modules:\n`;
+    modIssues.forEach((m: any) => {
+      text += `  ${m.moduleName || m.moduleId}: ${m.score}/100 (${m.issues?.length || 0} issues)\n`;
+      (m.issues || []).forEach((i: any) => {
+        text += `    [${i.severity}] ${i.title}\n`;
+        if (i.filePath) text += `      File: ${i.filePath}\n`;
+        text += `      ${i.description}\n`;
+      });
+    });
+    return text;
+  }
+
+  function downloadBlob(content: string, filename: string, mime: string) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const aEl = document.createElement("a"); aEl.href = url; aEl.download = filename; aEl.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportJSON() {
+    const report = {
+      name: a.name,
+      sourceType: a.sourceType,
+      sourcePath: a.sourcePath,
+      createdAt: a.createdAt,
+      score: a.overallScore,
+      issues: { critical: a.criticalIssues, high: a.highIssues, medium: a.mediumIssues, low: a.lowIssues },
+      modules: modIssues.map((m: any) => ({
+        moduleId: m.moduleId, moduleName: m.moduleName, score: m.score, status: m.status,
+        issues: m.issues?.map((i: any) => ({ severity: i.severity, title: i.title, description: i.description, filePath: i.filePath, suggestion: i.suggestion }))
+      })),
+      files: a.crawledFiles?.length || 0
+    };
+    downloadBlob(JSON.stringify(report, null, 2), `${a.name || "audit"}-report.json`, "application/json");
+    setShowExport(false);
+  }
+
+  function exportPDF() {
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${a.name || "Audit Report"}</title>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#333}h1{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:10px}.score{font-size:48px;font-weight:800;text-align:center;margin:20px 0}.meta{color:#64748b;font-size:14px}.module{border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:12px 0}.module h3{margin:0 0 8px}.issue{margin:8px 0;padding:8px;background:#f8fafc;border-radius:4px}.severity{font-weight:600;text-transform:uppercase;font-size:11px}.severity.critical{color:#dc2626}.severity.high{color:#f59e0b}.severity.medium{color:#3b82f6}.severity.low{color:#94a3b8}</style></head><body>
+<h1>${a.name || "Untitled Audit"}</h1>
+<p class="meta">${a.sourceType} — ${a.sourcePath} &middot; ${formatDate(a.createdAt)}</p>
+<div class="score">${a.overallScore ?? "N/A"}<span style="font-size:18px;color:#94a3b8">/100</span></div>
+<p style="text-align:center;color:#64748b">Overall Website Integrity Score</p>
+<p style="text-align:center">Critical: ${a.criticalIssues ?? 0} &middot; High: ${a.highIssues ?? 0} &middot; Medium: ${a.mediumIssues ?? 0} &middot; Low: ${a.lowIssues ?? 0}</p>
+${modIssues.map((m: any) => `<div class="module"><h3>${m.moduleName || m.moduleId} <span style="font-size:14px;color:#64748b">${m.score}/100</span></h3>${(m.issues || []).map((i: any) => `<div class="issue"><span class="severity ${i.severity}">[${i.severity}]</span> <strong>${i.title}</strong>${i.filePath ? `<br><span style="font-size:12px;color:#64748b">${i.filePath}</span>` : ""}<br><span style="font-size:13px">${i.description}</span></div>`).join("")}</div>`).join("")}
+</body></html>`;
+    const blob = new Blob([html], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const aEl = document.createElement("a"); aEl.href = url; aEl.download = `${a.name || "audit"}-report.pdf`; aEl.click();
+    URL.revokeObjectURL(url);
+    setShowExport(false);
+  }
+
+  function exportTXT() {
+    downloadBlob(buildReportText(), `${a.name || "audit"}-report.txt`, "text/plain");
+    setShowExport(false);
+  }
+
+  function exportDOC() {
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${a.name || "Audit Report"}</title></head><body>
+<h1>${a.name || "Untitled Audit"}</h1>
+<p>Source: ${a.sourceType} — ${a.sourcePath}<br>Date: ${formatDate(a.createdAt)}</p>
+<h2>Score: ${a.overallScore ?? "N/A"}/100</h2>
+<p>Issues: ${a.criticalIssues ?? 0} Critical, ${a.highIssues ?? 0} High, ${a.mediumIssues ?? 0} Medium, ${a.lowIssues ?? 0} Low</p>
+${modIssues.map((m: any) => `<h3>${m.moduleName || m.moduleId} (${m.score}/100)</h3>${(m.issues || []).map((i: any) => `<p><strong>[${i.severity}] ${i.title}</strong>${i.filePath ? `<br><em>${i.filePath}</em>` : ""}<br>${i.description}</p>`).join("")}`).join("")}
+</body></html>`;
+    downloadBlob(html, `${a.name || "audit"}-report.doc`, "application/msword");
+    setShowExport(false);
+  }
+
   return (
     <div className="animate-fadeIn">
       {/* Header */}
@@ -142,29 +220,30 @@ export default function Dashboard({ auditId, onBack }: Props) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => {
-            const report = {
-              name: a.name,
-              sourceType: a.sourceType,
-              sourcePath: a.sourcePath,
-              createdAt: a.createdAt,
-              score: a.overallScore,
-              issues: { critical: a.criticalIssues, high: a.highIssues, medium: a.mediumIssues, low: a.lowIssues },
-              modules: modIssues.map((m: any) => ({
-                moduleId: m.moduleId, moduleName: m.moduleName, score: m.score, status: m.status,
-                issues: m.issues?.map((i: any) => ({ severity: i.severity, title: i.title, description: i.description, filePath: i.filePath, suggestion: i.suggestion }))
-              })),
-              files: a.crawledFiles?.length || 0
-            };
-            const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const aEl = document.createElement("a"); aEl.href = url; aEl.download = `${a.name || "audit"}-report.json`; aEl.click();
-            URL.revokeObjectURL(url);
-          }} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${isPro ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
+        <div className="flex items-center gap-2 relative">
+          <button onClick={() => setShowExport(!showExport)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${isPro ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Export
+            <svg className={`w-3 h-3 transition-transform ${showExport ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </button>
+          {showExport && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowExport(false)} />
+              <div className={`absolute right-0 top-full mt-2 z-50 w-44 rounded-xl border shadow-xl overflow-hidden ${isPro ? "bg-slate-900 border-indigo-900/40" : "bg-white border-slate-200"}`}>
+                {[
+                  { label: "JSON", icon: "M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M9 5h6M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5H7a2 2 0 00-2 2v1", action: exportJSON },
+                  { label: "PDF Report", icon: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z m3-4l4-4m0 0l-4-4m4 4H7", action: exportPDF },
+                  { label: "TXT File", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", action: exportTXT },
+                  { label: "DOC File", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", action: exportDOC },
+                ].map(({ label, icon, action }) => (
+                  <button key={label} onClick={action} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${isPro ? "text-indigo-200 hover:bg-indigo-500/10 hover:text-white" : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700"}`}>
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={icon} /></svg>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
