@@ -26,7 +26,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
 
   const { data: statusData } = trpc.audit.status.useQuery({ id: auditId }, { refetchInterval: (q) => { const d = q.state.data; return (d?.status === "completed" || d?.status === "failed") ? false : 1000; } });
   const { data: audit, refetch } = trpc.audit.results.useQuery({ id: auditId }, { enabled: false });
-  const { data: fixData } = trpc.audit.canFix.useQuery({ id: auditId }, { enabled: false });
+  const { data: fixData } = trpc.audit.canFix.useQuery({ id: auditId }, { enabled: !!audit });
 
   const dryRunMutation = trpc.audit.dryRunFixes.useQuery({ id: auditId, issueIds: [] }, { enabled: false });
   const applyMutation = trpc.audit.applyFixes.useMutation();
