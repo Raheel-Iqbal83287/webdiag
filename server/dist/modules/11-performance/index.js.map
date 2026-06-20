@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"","sources":["../../../src/modules/11-performance/index.ts"],"names":[],"mappings":"AAGA,MAAM,UAAU,gBAAgB,CAAC,MAAqB;IACpD,OAAO;QACL,QAAQ,EAAE,gBAAgB;QAC1B,UAAU,EAAE,mBAAmB;QAC/B,MAAM,EAAE,MAAM;QACd,KAAK,EAAE,GAAG;QACV,MAAM,EAAE,EAAE;QACV,OAAO,EAAE,6BAA6B;KACvC,CAAC;AACJ,CAAC"}

@@ -29,7 +29,7 @@ async function main() {
 
   app.use("/trpc", createExpressMiddleware({ router: appRouter, createContext: () => ({}) }));
 
-  const clientDist = path.resolve(__dirname, "../../client/dist");
+  const clientDist = path.resolve(__dirname, "../../dist");
   if (fs.existsSync(clientDist)) {
     app.use(express.static(clientDist));
     app.get("*", (_req, res) => res.sendFile(path.join(clientDist, "index.html")));

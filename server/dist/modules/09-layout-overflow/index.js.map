@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"","sources":["../../../src/modules/09-layout-overflow/index.ts"],"names":[],"mappings":"AAGA,MAAM,UAAU,mBAAmB,CAAC,MAAqB;IACvD,OAAO;QACL,QAAQ,EAAE,oBAAoB;QAC9B,UAAU,EAAE,mBAAmB;QAC/B,MAAM,EAAE,MAAM;QACd,KAAK,EAAE,GAAG;QACV,MAAM,EAAE,EAAE;QACV,OAAO,EAAE,iCAAiC;KAC3C,CAAC;AACJ,CAAC"}

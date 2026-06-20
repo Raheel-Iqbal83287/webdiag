@@ -13,7 +13,7 @@ function log(msg) {
   console.log(msg);
 }
 
-const distPath = resolve(__dirname, "server/dist/src/index.js");
+const distPath = resolve(__dirname, "server/dist/index.js");
 
 if (!existsSync(distPath)) {
   log("Build output not found. Running build...");
@@ -27,7 +27,7 @@ if (!existsSync(distPath)) {
 }
 
 try {
-  await import("./server/dist/src/index.js");
+  await import("./server/dist/index.js");
   log("Server started");
 } catch (err) {
   log(`Server startup error: ${err.stack || err.message}`);

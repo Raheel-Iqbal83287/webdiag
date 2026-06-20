@@ -15,7 +15,7 @@
     "cli:json": "tsx server/src/cli.ts -o json",
     "cli:md": "tsx server/src/cli.ts -o markdown",
     "cli:html": "tsx server/src/cli.ts -o html",
-    "start": "npm run build && node server/dist/src/index.js",
+    "start": "npm run build && node server/dist/index.js",
     "prepublishOnly": "npm run build",
     "clean": "rm -rf dist data"
   },
