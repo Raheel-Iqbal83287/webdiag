@@ -10,7 +10,7 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string }> = 
   running: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
 };
 
-export default function History({ onSelectAudit, onCompare }: Props) {
+export default function History({ onSelectAudit, onCompare, onBack }: Props) {
   const { data: audits, isLoading, error } = trpc.audit.list.useQuery();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
