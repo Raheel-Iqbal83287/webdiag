@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
+import { jsPDF } from "jspdf";
 import { severityColor, formatDate } from "../lib/utils";
 import { moduleDefs } from "../lib/modules";
 import { isProTier } from "../lib/tier";
@@ -170,18 +171,43 @@ export default function Dashboard({ auditId, onBack }: Props) {
   }
 
   function exportPDF() {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${a.name || "Audit Report"}</title>
-<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#333}@media print{body{margin:0;padding:20px}}h1{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:10px}.score{font-size:48px;font-weight:800;text-align:center;margin:20px 0}.meta{color:#64748b;font-size:14px}.module{border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:12px 0;page-break-inside:avoid}.module h3{margin:0 0 8px}.issue{margin:8px 0;padding:8px;background:#f8fafc;border-radius:4px}.severity{font-weight:600;text-transform:uppercase;font-size:11px}.severity.critical{color:#dc2626}.severity.high{color:#f59e0b}.severity.medium{color:#3b82f6}.severity.low{color:#94a3b8}</style></head><body>
-<h1>${a.name || "Untitled Audit"}</h1>
-<p class="meta">${a.sourceType} — ${a.sourcePath} &middot; ${formatDate(a.createdAt)}</p>
-<div class="score">${a.overallScore ?? "N/A"}<span style="font-size:18px;color:#94a3b8">/100</span></div>
-<p style="text-align:center;color:#64748b">Overall Website Integrity Score</p>
-<p style="text-align:center">Critical: ${a.criticalIssues ?? 0} &middot; High: ${a.highIssues ?? 0} &middot; Medium: ${a.mediumIssues ?? 0} &middot; Low: ${a.lowIssues ?? 0}</p>
-${modIssues.map((m: any) => `<div class="module"><h3>${m.moduleName || m.moduleId} <span style="font-size:14px;color:#64748b">${m.score}/100</span></h3>${(m.issues || []).map((i: any) => `<div class="issue"><span class="severity ${i.severity}">[${i.severity}]</span> <strong>${i.title}</strong>${i.filePath ? `<br><span style="font-size:12px;color:#64748b">${i.filePath}</span>` : ""}<br><span style="font-size:13px">${i.description}</span></div>`).join("")}</div>`).join("")}
-<script>window.onload=function(){window.print()}</script></body></html>`);
-    win.document.close();
+    const doc = new jsPDF();
+    const name = a.name || "Untitled Audit";
+    doc.setFontSize(18); doc.setTextColor(79, 70, 229);
+    doc.text(name, 14, 22);
+    doc.setFontSize(10); doc.setTextColor(100, 116, 139);
+    doc.text(`${a.sourceType} — ${a.sourcePath}`, 14, 30);
+    doc.text(formatDate(a.createdAt), 14, 36);
+    const score = a.overallScore ?? 0;
+    doc.setFontSize(40); doc.setTextColor(score >= 80 ? 16 : score >= 60 ? 245 : score >= 40 ? 249 : 220, score >= 80 ? 185 : score >= 60 ? 158 : score >= 40 ? 115 : 38, score >= 80 ? 129 : score >= 60 ? 11 : score >= 40 ? 22 : 38);
+    doc.text(String(score), 14, 62);
+    doc.setFontSize(10); doc.setTextColor(148, 163, 184);
+    doc.text("/100", 14, 70);
+    doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text(`Critical: ${a.criticalIssues ?? 0}    High: ${a.highIssues ?? 0}    Medium: ${a.mediumIssues ?? 0}    Low: ${a.lowIssues ?? 0}`, 14, 82);
+    let y = 96;
+    modIssues.forEach((m: any) => {
+      if (y > 260) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setTextColor(30, 41, 59);
+      doc.text(`${m.moduleName || m.moduleId} — ${m.score}/100`, 14, y); y += 8;
+      (m.issues || []).forEach((i: any) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        const sevColors: Record<string, [number, number, number]> = { critical: [220, 38, 38], high: [245, 158, 11], medium: [59, 130, 246], low: [148, 163, 184] };
+        const sc = sevColors[i.severity] || [100, 116, 139];
+        doc.setFontSize(9); doc.setTextColor(...sc);
+        doc.text(`[${i.severity.toUpperCase()}]`, 14, y);
+        const tw = doc.getTextWidth(`[${i.severity.toUpperCase()}] `);
+        doc.setTextColor(30, 41, 59); doc.setFontSize(10);
+        const titleLines = doc.splitTextToSize(i.title, 170);
+        titleLines.forEach((line: string) => { doc.text(line, 14 + tw, y); y += 5; });
+        y += 2;
+        doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+        const descLines = doc.splitTextToSize(i.description, 180);
+        descLines.forEach((line: string) => { doc.text(line, 24, y); y += 4; });
+        y += 3;
+      });
+    });
+    doc.save(`${name.replace(/[^a-zA-Z0-9]/g, "_")}-report.pdf`);
     setShowExport(false);
   }
 
