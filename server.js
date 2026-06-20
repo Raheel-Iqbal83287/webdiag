@@ -13,8 +13,21 @@ function log(msg) {
   console.log(msg);
 }
 
-const distPath = resolve(__dirname, "server/dist/index.js");
+log("Starting server.js bootstrap...");
 
+const nodeModulesPath = resolve(__dirname, "node_modules");
+if (!existsSync(nodeModulesPath)) {
+  log("node_modules not found. Running npm install...");
+  try {
+    execSync("npm install --omit=dev", { cwd: __dirname, stdio: "inherit" });
+    log("npm install completed");
+  } catch (err) {
+    log(`npm install failed: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+const distPath = resolve(__dirname, "server/dist/index.js");
 if (!existsSync(distPath)) {
   log("Build output not found. Running build...");
   try {
