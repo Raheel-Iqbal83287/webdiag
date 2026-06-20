@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import { trpc } from "../lib/trpc";
 import { moduleDefs } from "../lib/modules";
 
@@ -7,10 +7,12 @@ interface HomeProps {
 }
 
 export default function Home({ onAuditStarted }: HomeProps) {
-  const [sourceType, setSourceType] = useState<"folder" | "url" | "github">("url");
+  const [sourceType, setSourceType] = useState<"folder" | "url" | "github" | "zip">("url");
   const [sourcePath, setSourcePath] = useState("");
+  const [zipFile, setZipFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createAudit = trpc.audit.create.useMutation({ onSuccess: (data) => onAuditStarted(data.id), onError: (err) => setError(err.message) });
 
@@ -18,13 +20,25 @@ export default function Home({ onAuditStarted }: HomeProps) {
     { key: "url", label: "Live URL", icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1", placeholder: "https://example.com" },
     { key: "folder", label: "Local Folder", icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z", placeholder: "/path/to/website" },
     { key: "github", label: "GitHub Repo", icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4", placeholder: "https://github.com/user/repo" },
+    { key: "zip", label: "ZIP Upload", icon: "M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12", placeholder: "Upload a ZIP file" },
   ];
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!sourcePath.trim()) { setError("Please provide a source path"); return; }
-    createAudit.mutate({ name: name || undefined, sourceType, sourcePath: sourcePath.trim() });
+    if (sourceType === "zip") {
+      if (!zipFile) { setError("Please select a ZIP file"); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        createAudit.mutate({ name: name || undefined, sourceType: "zip", sourcePath: zipFile.name, fileBase64: base64 });
+      };
+      reader.onerror = () => setError("Failed to read file");
+      reader.readAsDataURL(zipFile);
+    } else {
+      if (!sourcePath.trim()) { setError("Please provide a source path"); return; }
+      createAudit.mutate({ name: name || undefined, sourceType, sourcePath: sourcePath.trim() });
+    }
   };
 
   return (
@@ -61,11 +75,19 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              {sourceType === "url" ? "Website URL" : sourceType === "github" ? "Repository URL" : "Folder Path"}
+              {sourceType === "url" ? "Website URL" : sourceType === "github" ? "Repository URL" : sourceType === "zip" ? "ZIP File" : "Folder Path"}
             </label>
-            <input type="text" value={sourcePath} onChange={e => setSourcePath(e.target.value)}
-              placeholder={tabs.find(t => t.key === sourceType)?.placeholder}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+            {sourceType === "zip" ? (
+              <div>
+                <input type="file" ref={fileInputRef} accept=".zip" onChange={e => setZipFile(e.target.files?.[0] || null)}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-semibold hover:file:bg-indigo-100" />
+                {zipFile && <p className="mt-1.5 text-xs text-slate-500">Selected: {zipFile.name} ({(zipFile.size / 1024).toFixed(1)} KB)</p>}
+              </div>
+            ) : (
+              <input type="text" value={sourcePath} onChange={e => setSourcePath(e.target.value)}
+                placeholder={tabs.find(t => t.key === sourceType)?.placeholder}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+            )}
           </div>
 
           <div className="mt-5">
@@ -82,7 +104,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={createAudit.isPending || !sourcePath.trim()}
+            disabled={createAudit.isPending || (sourceType === "zip" ? !zipFile : !sourcePath.trim())}
             className="mt-6 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-200 hover:shadow-lg active:scale-[0.98]"
           >
             {createAudit.isPending ? (

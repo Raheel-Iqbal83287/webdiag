@@ -4,18 +4,21 @@ import { router, publicProcedure } from "../trpc.js";
 import { crawlLocalFolder } from "../../crawler/local-folder.js";
 import { crawlUrl } from "../../crawler/live-url.js";
 import { crawlGitHub } from "../../crawler/github-repo.js";
+import { crawlZipFile } from "../../crawler/zip-file.js";
 import { runAudit } from "../../engine/orchestrator.js";
 import { canAutoFix, autoFix } from "../../engine/auto-fix/index.js";
 import { getDb, saveDb } from "../../db/index.js";
 import { schema } from "../../db/index.js";
 import { eq } from "drizzle-orm";
 import fs from "fs";
+import os from "os";
+import path from "path";
 
 const auditProgress = new Map<string, { progress: number; currentStep: string }>();
 
 export const auditRouter = router({
   create: publicProcedure
-    .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder", "url", "github"]), sourcePath: z.string().min(1) }))
+    .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder", "url", "github", "zip"]), sourcePath: z.string().min(1), fileBase64: z.string().optional() }))
     .mutation(async ({ input }) => {
       const { db } = await getDb();
       const id = uuid();
@@ -127,7 +130,8 @@ export const auditRouter = router({
   }),
 });
 
-async function runAuditAsync(id: string, sourceType: string, sourcePath: string) {
+async function runAuditAsync(id: string, sourceType: string, sourcePath: string, fileBase64?: string) {
+  let cleanupZip: (() => void) | undefined;
   try {
     const { db } = await getDb();
     await db.update(schema.audits).set({ status: "crawling" }).where(eq(schema.audits.id, id));
@@ -153,6 +157,14 @@ async function runAuditAsync(id: string, sourceType: string, sourcePath: string)
         return;
       }
       files = result.files;
+    } else if (sourceType === "zip") {
+      if (!fileBase64) throw new Error("No file data provided");
+      const zipPath = path.join(os.tmpdir(), `upload-${id}.zip`);
+      fs.writeFileSync(zipPath, Buffer.from(fileBase64, "base64"));
+      const result = await crawlZipFile(zipPath);
+      cleanupZip = result.cleanup;
+      files = result.files;
+      try { fs.unlinkSync(zipPath); } catch { /* ignore */ }
     } else {
       files = await crawlLocalFolder(sourcePath);
     }
@@ -174,5 +186,7 @@ async function runAuditAsync(id: string, sourceType: string, sourcePath: string)
       saveDb();
     } catch { /* ignore DB error on failure */ }
     auditProgress.set(id, { progress: 0, currentStep: `Failed: ${errorMessage}` });
+  } finally {
+    if (cleanupZip) cleanupZip();
   }
 }
