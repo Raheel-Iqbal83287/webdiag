@@ -7,14 +7,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      document.addEventListener("contextmenu", e => e.preventDefault());
-      document.addEventListener("keydown", e => {
-        if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key)) || (e.ctrlKey && e.key === "U")) {
-          e.preventDefault();
-        }
-      });
-    </script>
   
 
 </body></html>
