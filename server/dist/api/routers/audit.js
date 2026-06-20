@@ -2,6 +2,8 @@ import { z } from "zod";
 import { v4 as uuid } from "uuid";
 import { router, publicProcedure } from "../trpc.js";
 import { crawlLocalFolder } from "../../crawler/local-folder.js";
+import { crawlUrl } from "../../crawler/live-url.js";
+import { crawlGitHub } from "../../crawler/github-repo.js";
 import { runAudit } from "../../engine/orchestrator.js";
 import { canAutoFix, autoFix } from "../../engine/auto-fix/index.js";
 import { getDb, saveDb } from "../../db/index.js";
@@ -11,11 +13,11 @@ import fs from "fs";
 const auditProgress = new Map();
 export const auditRouter = router({
     create: publicProcedure
-        .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
+        .input(z.object({ name: z.string().optional(), sourceType: z.enum(["folder", "url", "github"]), sourcePath: z.string().min(1) }))
         .mutation(async ({ input }) => {
         const { db } = await getDb();
         const id = uuid();
-        if (!fs.existsSync(input.sourcePath))
+        if (input.sourceType === "folder" && !fs.existsSync(input.sourcePath))
             throw new Error(`Folder not found: ${input.sourcePath}`);
         await db.insert(schema.audits).values({ id, name: input.name || `Audit - ${new Date().toLocaleDateString()}`, sourceType: input.sourceType, sourcePath: input.sourcePath, status: "pending", createdAt: new Date().toISOString() });
         saveDb();
@@ -153,7 +155,30 @@ async function runAuditAsync(id, sourceType, sourcePath) {
         await db.update(schema.audits).set({ status: "crawling" }).where(eq(schema.audits.id, id));
         saveDb();
         auditProgress.set(id, { progress: 5, currentStep: "Crawling files..." });
-        const files = await crawlLocalFolder(sourcePath);
+        let files;
+        if (sourceType === "url") {
+            const result = await crawlUrl(sourcePath);
+            if (result.errors.length) {
+                await db.update(schema.audits).set({ status: "failed" }).where(eq(schema.audits.id, id));
+                saveDb();
+                auditProgress.set(id, { progress: 0, currentStep: `Failed: ${result.errors.join("; ")}` });
+                return;
+            }
+            files = result.files;
+        }
+        else if (sourceType === "github") {
+            const result = await crawlGitHub(sourcePath);
+            if (result.errors.length) {
+                await db.update(schema.audits).set({ status: "failed" }).where(eq(schema.audits.id, id));
+                saveDb();
+                auditProgress.set(id, { progress: 0, currentStep: `Failed: ${result.errors.join("; ")}` });
+                return;
+            }
+            files = result.files;
+        }
+        else {
+            files = await crawlLocalFolder(sourcePath);
+        }
         auditProgress.set(id, { progress: 20, currentStep: `Found ${files.length} files. Running audits...` });
         await db.update(schema.audits).set({ status: "auditing" }).where(eq(schema.audits.id, id));
         saveDb();

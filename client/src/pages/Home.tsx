@@ -7,17 +7,24 @@ interface HomeProps {
 }
 
 export default function Home({ onAuditStarted }: HomeProps) {
+  const [sourceType, setSourceType] = useState<"folder" | "url" | "github">("url");
   const [sourcePath, setSourcePath] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
   const createAudit = trpc.audit.create.useMutation({ onSuccess: (data) => onAuditStarted(data.id), onError: (err) => setError(err.message) });
 
+  const tabs: { key: typeof sourceType; label: string; icon: string; placeholder: string }[] = [
+    { key: "url", label: "Live URL", icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1", placeholder: "https://example.com" },
+    { key: "folder", label: "Local Folder", icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z", placeholder: "/path/to/website" },
+    { key: "github", label: "GitHub Repo", icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4", placeholder: "https://github.com/user/repo" },
+  ];
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError("");
     if (!sourcePath.trim()) { setError("Please provide a source path"); return; }
-    createAudit.mutate({ name: name || undefined, sourceType: "folder", sourcePath: sourcePath.trim() });
+    createAudit.mutate({ name: name || undefined, sourceType, sourcePath: sourcePath.trim() });
   };
 
   return (
@@ -32,21 +39,33 @@ export default function Home({ onAuditStarted }: HomeProps) {
           Scan. Analyze. <span className="relative"><span className="gradient-text">Fix.</span><span className="absolute -top-4 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded whitespace-nowrap z-10">Pro Feature</span></span>
         </h1>
         <div className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          <div className="hidden sm:block whitespace-nowrap">Comprehensive AI-powered auditing for integrity, SEO, accessibility, and compliance.</div>
-          <div className="sm:hidden">AI-powered auditing for integrity, SEO, accessibility &amp; compliance.</div>
-          <div className="hidden sm:block whitespace-nowrap">16 modules for comprehensive local folder auditing.</div>
-          <div className="sm:hidden">16 modules for comprehensive local folder auditing.</div>
-          <div className="hidden sm:block whitespace-nowrap">Check your website before deployment.</div>
-          <div className="sm:hidden">Check your website before deployment.</div>
+          Comprehensive AI-powered auditing for integrity, SEO, accessibility, and compliance.
         </div>
       </div>
 
-      {/* Source Type Tabs */}
+      {/* Input Form */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
         <form onSubmit={handleSubmit}>
+          <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6">
+            {tabs.map(({ key, label, icon }) => (
+              <button type="button" key={key} onClick={() => { setSourceType(key); setSourcePath(""); setError(""); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all ${
+                  sourceType === key ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={icon} /></svg>
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Folder Path</label>
-            <input type="text" value={sourcePath} onChange={e => setSourcePath(e.target.value)} placeholder="C:\projects\my-website" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              {sourceType === "url" ? "Website URL" : sourceType === "github" ? "Repository URL" : "Folder Path"}
+            </label>
+            <input type="text" value={sourcePath} onChange={e => setSourcePath(e.target.value)}
+              placeholder={tabs.find(t => t.key === sourceType)?.placeholder}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
           </div>
 
           <div className="mt-5">
