@@ -51,8 +51,8 @@ export default function Dashboard({ auditId, onBack }: Props) {
             <div className="absolute inset-0 border-4 border-indigo-200 rounded-full" />
             <div className="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-1">{statusData?.currentStep || "Initializing audit..."}</h2>
-          <p className="text-sm text-slate-500 mb-6">Analyzing your website across 16 modules</p>
+          <h2 className={`text-xl font-bold mb-1 ${isPro ? "text-white" : "text-slate-800"}`}>{statusData?.currentStep || "Initializing audit..."}</h2>
+          <p className={`text-sm mb-6 ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>Analyzing your website across 16 modules</p>
           <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500" style={{ width: `${statusData?.progress || 0}%` }} />
           </div>
@@ -65,13 +65,13 @@ export default function Dashboard({ auditId, onBack }: Props) {
   if (statusData.status === "failed") {
     return (
       <div className="text-center py-20">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-50 flex items-center justify-center">
+        <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center ${isPro ? "bg-red-900/20" : "bg-red-50"}`}>
           <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-2">Audit Failed</h2>
-        <p className="text-slate-500 mb-6 max-w-md mx-auto">{statusData.currentStep}</p>
+        <h2 className={`text-xl font-bold mb-2 ${isPro ? "text-white" : "text-slate-800"}`}>Audit Failed</h2>
+        <p className={`mb-6 max-w-md mx-auto ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>{statusData.currentStep}</p>
         <button onClick={onBack} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-sm">
           Back to start
         </button>
@@ -130,25 +130,48 @@ export default function Dashboard({ auditId, onBack }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+          <button onClick={onBack} className={`flex items-center gap-1.5 text-sm transition-colors font-medium ${isPro ? "text-indigo-300 hover:text-white" : "text-slate-500 hover:text-indigo-600"}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             Back
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{a.name || "Untitled Audit"}</h1>
-            <p className="text-sm text-slate-400 flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-medium text-slate-600">{a.sourceType}</span>
+            <h1 className={`text-xl font-bold ${isPro ? "text-white" : "text-slate-900"}`}>{a.name || "Untitled Audit"}</h1>
+            <p className={`text-sm flex items-center gap-2 ${isPro ? "text-indigo-300/60" : "text-slate-400"}`}>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${isPro ? "bg-slate-800 text-indigo-300" : "bg-slate-100 text-slate-600"}`}>{a.sourceType}</span>
               {a.sourcePath} &middot; {formatDate(a.createdAt)}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2"></div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => {
+            const report = {
+              name: a.name,
+              sourceType: a.sourceType,
+              sourcePath: a.sourcePath,
+              createdAt: a.createdAt,
+              score: a.overallScore,
+              issues: { critical: a.criticalIssues, high: a.highIssues, medium: a.mediumIssues, low: a.lowIssues },
+              modules: modIssues.map((m: any) => ({
+                moduleId: m.moduleId, moduleName: m.moduleName, score: m.score, status: m.status,
+                issues: m.issues?.map((i: any) => ({ severity: i.severity, title: i.title, description: i.description, filePath: i.filePath, suggestion: i.suggestion }))
+              })),
+              files: a.crawledFiles?.length || 0
+            };
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const aEl = document.createElement("a"); aEl.href = url; aEl.download = `${a.name || "audit"}-report.json`; aEl.click();
+            URL.revokeObjectURL(url);
+          }} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm ${isPro ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Export
+          </button>
+        </div>
       </div>
 
       {/* Score + Severity Row */}
       <div className="grid grid-cols-6 gap-4 mb-8">
         {/* Score Gauge */}
-        <div className="col-span-2 bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-5">
+        <div className={`col-span-2 rounded-2xl border p-5 flex items-center gap-5 ${isPro ? "bg-slate-900/50 border-indigo-900/30" : "bg-white border-slate-200"}`}>
           <div className="relative flex-shrink-0" style={{ width: svgSize, height: svgSize }}>
             <svg className="transform -rotate-90" width={svgSize} height={svgSize}>
               <circle cx={center} cy={center} r={radius} fill="none" stroke="#e2e8f0" strokeWidth="10" />
@@ -158,15 +181,15 @@ export default function Dashboard({ auditId, onBack }: Props) {
             </svg>
             <div className="absolute inset-0 flex items-center justify-center flex-col">
               <span className="text-3xl font-extrabold" style={{ color: scoreColor }}>{score}</span>
-              <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">/100</span>
+              <span className={`text-[10px] font-medium uppercase tracking-wider ${isPro ? "text-indigo-400/50" : "text-slate-400"}`}>/100</span>
             </div>
           </div>
           <div>
-            <div className="text-lg font-bold text-slate-800">
+            <div className={`text-lg font-bold ${isPro ? "text-white" : "text-slate-800"}`}>
               {score >= 80 ? "Great Shape" : score >= 60 ? "Needs Work" : score >= 40 ? "Poor" : "Critical"}
             </div>
-            <p className="text-sm text-slate-500 mt-0.5">Overall Website Integrity Score</p>
-            <div className="flex items-center gap-3 mt-3 text-xs text-slate-500">
+            <p className={`text-sm mt-0.5 ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>Overall Website Integrity Score</p>
+            <div className={`flex items-center gap-3 mt-3 text-xs ${isPro ? "text-indigo-300/50" : "text-slate-500"}`}>
               <span className="flex items-center gap-1">
                 <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 {a.crawledFiles?.length || 0} files
@@ -181,7 +204,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
 
         {/* Severity Cards */}
         {severityLabels.map(({ key, label, color, bg, border, dot }) => (
-          <div key={key} className={`bg-white rounded-2xl border ${border} p-4 flex flex-col items-center justify-center text-center`}>
+          <div key={key} className={`rounded-2xl border p-4 flex flex-col items-center justify-center text-center ${isPro ? "bg-slate-900/50 border-indigo-900/30" : `bg-white ${border}`}`}>
             <div className={`text-3xl font-extrabold ${color}`}>{a[key] ?? 0}</div>
             <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mt-1 flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
@@ -203,7 +226,9 @@ export default function Dashboard({ auditId, onBack }: Props) {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeModule === v
                   ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  : isPro
+                    ? "bg-slate-800 text-indigo-300 hover:bg-slate-700"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}>{l}</button>
           ))}
         </div>
@@ -288,7 +313,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
             const statusBadge = hasCritical ? "bg-red-50 text-red-700" : issueCount === 0 ? "bg-emerald-50 text-emerald-700" : mod.status === "fail" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700";
             const fixableIssues = getModuleIssues(mod);
             return (
-              <details key={def.id} className="group bg-white rounded-2xl border border-slate-200 overflow-hidden card-hover">
+              <details key={def.id} className={`group rounded-2xl border overflow-hidden card-hover ${isPro ? "bg-slate-900/50 border-indigo-900/30" : "bg-white border-slate-200"}`}>
                 <summary className="p-5 cursor-pointer">
                   <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${def.color} flex items-center justify-center shadow-sm flex-shrink-0`}>
@@ -298,14 +323,14 @@ export default function Dashboard({ auditId, onBack }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="font-semibold text-slate-800">{def.name}</span>
+                        <span className={`font-semibold ${isPro ? "text-indigo-100" : "text-slate-800"}`}>{def.name}</span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${statusBadge}`}>{statusLabel}</span>
                       </div>
-                      <div className="text-xs text-slate-400">{def.desc}</div>
+                      <div className={`text-xs ${isPro ? "text-indigo-300/50" : "text-slate-400"}`}>{def.desc}</div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-xl font-extrabold text-slate-700">{mod.score}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">/100</div>
+                      <div className={`text-xl font-extrabold ${isPro ? "text-white" : "text-slate-700"}`}>{mod.score}</div>
+                      <div className={`text-[10px] uppercase tracking-wider ${isPro ? "text-indigo-400/50" : "text-slate-400"}`}>/100</div>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center gap-4">
@@ -313,7 +338,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
                       <div className={`h-full rounded-full transition-all duration-700 animate-fill-bar ${issueCount === 0 ? "bg-emerald-500" : hasCritical || mod.status === "fail" ? "bg-red-500" : "bg-amber-500"}`}
                         style={{ width: `${mod.score}%` }} />
                     </div>
-                    <span className="text-xs text-slate-400 font-medium">{issueCount} issue{issueCount !== 1 ? "s" : ""}</span>
+                    <span className={`text-xs font-medium ${isPro ? "text-indigo-300/50" : "text-slate-400"}`}>{issueCount} issue{issueCount !== 1 ? "s" : ""}</span>
                     {fixableIssues.length > 0 && (
                       <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleFix(fixableIssues.map((i: any) => i.id)); }}
                         className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors">
