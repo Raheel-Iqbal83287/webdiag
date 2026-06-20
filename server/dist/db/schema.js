@@ -2,6 +2,7 @@ import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 export const usage = sqliteTable("usage", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     clientIp: text("client_ip").notNull(),
+    email: text("email").notNull().default(""),
     month: text("month").notNull(),
     scanCount: integer("scan_count").notNull().default(0),
 });

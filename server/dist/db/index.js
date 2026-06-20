@@ -27,6 +27,7 @@ export async function getDb() {
     CREATE TABLE IF NOT EXISTS usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_ip TEXT NOT NULL,
+      email TEXT NOT NULL DEFAULT '',
       month TEXT NOT NULL,
       scan_count INTEGER NOT NULL DEFAULT 0,
       UNIQUE(client_ip, month)

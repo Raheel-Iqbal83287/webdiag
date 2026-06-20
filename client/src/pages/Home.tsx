@@ -10,12 +10,13 @@ export default function Home({ onAuditStarted }: HomeProps) {
   const [folderName, setFolderName] = useState("");
   const [fileCount, setFileCount] = useState(0);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const usage = trpc.usage.status.useQuery();
-  const isPro = false; // Will be toggled when auth/payments added
+  const usage = trpc.usage.status.useQuery({ email: email || undefined }, { enabled: email.length > 0 });
+  const isPro = false;
   const remaining = isPro ? Infinity : (usage.data?.remaining ?? 0);
   const limitReached = !isPro && remaining <= 0;
 
@@ -42,6 +43,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
         formData.append("files", files[i], files[i].webkitRelativePath);
       }
       if (name.trim()) formData.append("name", name.trim());
+      if (email.trim()) formData.append("email", email.trim());
 
       const res = await fetch("/api/upload-folder", { method: "POST", body: formData });
       const data = await res.json();
@@ -104,6 +106,11 @@ export default function Home({ onAuditStarted }: HomeProps) {
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="My Site Audit" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
           </div>
 
+          <div className="mt-5">
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email <span className="text-slate-400 font-normal">(required for usage tracking)</span></label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+          </div>
+
           {error && (
             <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-3">
               <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -113,7 +120,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={uploading || !folderName || limitReached}
+            disabled={uploading || !folderName || !email.trim() || limitReached}
             className="mt-6 w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-200 hover:shadow-lg active:scale-[0.98]"
           >
             {limitReached ? (

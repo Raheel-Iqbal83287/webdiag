@@ -36,8 +36,9 @@ async function main() {
   app.post("/api/upload-folder", upload.array("files"), async (req, res) => {
     try {
       const ip = req.ip || req.socket.remoteAddress || "unknown";
+      const email = req.body.email as string | undefined;
       const { checkUsage, incrementUsage } = await import("./api/routers/usage.js");
-      const usage = await checkUsage(ip);
+      const usage = await checkUsage(ip, email);
       if (!usage.allowed) {
         res.status(403).json({ error: `Free tier limit reached. Upgrade to Pro for unlimited scans.` });
         return;
@@ -69,7 +70,7 @@ async function main() {
       });
       saveDb();
 
-      await incrementUsage(ip);
+      await incrementUsage(ip, email);
 
       const { runAuditAsync } = await import("./api/routers/audit.js");
       runAuditAsync(id, "folder", targetDir, "free");
