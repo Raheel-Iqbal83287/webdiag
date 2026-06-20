@@ -8,10 +8,18 @@ import { appRouter, type AppRouter } from "./api/routers/index.js";
 import { getDb, saveDb } from "./db/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const logPath = path.resolve(__dirname, "../../server-startup.log");
+
+function log(msg: string) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  try { fs.writeFileSync(logPath, line, { flag: "a" }); } catch {}
+  console.log(msg);
+}
 
 async function main() {
+  log("Starting server...");
   await getDb();
-  console.log("Database initialized");
+  log("Database initialized");
 
   const app = express();
   const PORT = process.env.PORT || 3000;
@@ -29,14 +37,16 @@ async function main() {
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-  process.on("SIGINT", () => { saveDb(); process.exit(0); });
-  process.on("SIGTERM", () => { saveDb(); process.exit(0); });
+  process.on("SIGINT", () => { saveDb(); log("Shutting down"); process.exit(0); });
+  process.on("SIGTERM", () => { saveDb(); log("Shutting down"); process.exit(0); });
 
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`tRPC endpoint: http://localhost:${PORT}/trpc`);
+    log(`Server running on port ${PORT}`);
   });
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  log(`Fatal error: ${err.stack || err.message}`);
+  process.exit(1);
+});
 export type { AppRouter };
