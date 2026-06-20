@@ -63,7 +63,7 @@ export default function History({ onSelectAudit, onCompare }: Props) {
     <div className="animate-fadeIn">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Audit History</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Audit History <span className="ml-2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle">Pro</span></h1>
           <p className="text-sm text-slate-500 mt-0.5">{displayAudits.length} audit{displayAudits.length !== 1 ? "s" : ""} total</p>
         </div>
         {selectedIds.length === 2 && (
