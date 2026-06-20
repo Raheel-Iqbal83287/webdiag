@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
 import { severityColor, formatDate } from "../lib/utils";
 import { moduleDefs } from "../lib/modules";
+import { isProTier } from "../lib/tier";
 
 interface Props { auditId: string; onBack: () => void }
 
@@ -13,6 +14,7 @@ const severityLabels = [
 ];
 
 export default function Dashboard({ auditId, onBack }: Props) {
+  const isPro = isProTier();
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [fixBusy, setFixBusy] = useState<string[]>([]);
   const [fixPreview, setFixPreview] = useState<any>(null);
@@ -191,8 +193,8 @@ export default function Dashboard({ auditId, onBack }: Props) {
 
       {/* Module Results */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+        <h2 className={`text-lg font-bold flex items-center gap-2 ${isPro ? "text-white" : "text-slate-800"}`}>
+          <svg className={`w-5 h-5 ${isPro ? "text-indigo-400" : "text-indigo-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
           16 Audit Modules
         </h2>
         <div className="flex gap-1">
