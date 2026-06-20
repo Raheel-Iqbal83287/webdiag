@@ -240,7 +240,8 @@ export default function Dashboard({ auditId, onBack }: Props) {
       });
     });
     const doc = new Document({ sections: [{ children }] });
-    const blob = await Packer.toBlob(doc);
+    const data = await Packer.toBlob(doc);
+    const blob = new Blob([data], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
     const url = URL.createObjectURL(blob);
     const aEl = document.createElement("a"); aEl.href = url; aEl.download = `${name.replace(/[^a-zA-Z0-9]/g, "_")}-report.docx`; aEl.click();
     URL.revokeObjectURL(url);
