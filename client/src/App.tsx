@@ -9,8 +9,14 @@ type Page = { name: "home" } | { name: "dashboard"; auditId: string } | { name: 
 
 export default function App() {
   const [page, setPage] = useState<Page>({ name: "home" });
+  const [prevPage, setPrevPage] = useState<Page>({ name: "home" });
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isPro] = useState(isProTier());
+
+  const navigateToHistory = () => {
+    setPrevPage(page);
+    setPage({ name: "history" });
+  };
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -44,7 +50,7 @@ export default function App() {
                 New Audit {!isPro && <span className="px-1 py-0.5 bg-indigo-600 text-white text-[8px] font-bold uppercase rounded">Pro</span>}
               </button>
               <button disabled={!isPro}
-                onClick={() => setPage({ name: "history" })}
+                onClick={navigateToHistory}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${!isPro ? "text-slate-300 cursor-not-allowed" : isPro ? (page.name === "history" || page.name === "compare" ? "bg-indigo-500/20 text-indigo-300 shadow-sm" : "text-indigo-200 hover:text-white hover:bg-white/5") : page.name === "history" || page.name === "compare" ? "bg-indigo-50 text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -58,7 +64,7 @@ export default function App() {
         <div className="animate-fadeIn">
           {page.name === "home" && <Home isPro={isPro} onAuditStarted={(id) => setPage({ name: "dashboard", auditId: id })} />}
           {page.name === "dashboard" && <Dashboard auditId={page.auditId} onBack={() => setPage({ name: "home" })} />}
-          {page.name === "history" && <History onSelectAudit={(id) => setPage({ name: "dashboard", auditId: id })} onCompare={(id1, id2) => setPage({ name: "compare", id1, id2 })} onBack={() => setPage({ name: "home" })} />}
+          {page.name === "history" && <History onSelectAudit={(id) => setPage({ name: "dashboard", auditId: id })} onCompare={(id1, id2) => setPage({ name: "compare", id1, id2 })} onBack={() => setPage(prevPage)} />}
           {page.name === "compare" && <Compare id1={page.id1} id2={page.id2} onBack={() => setPage({ name: "history" })} />}
         </div>
       </main>
