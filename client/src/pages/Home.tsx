@@ -64,7 +64,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
         {isPro && (
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/10 border border-indigo-400/20 rounded-full text-xs font-semibold text-indigo-300 mb-6">
             <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            Pro Plan — Unlimited Scans & All 16 Modules
+            Pro Plan
           </div>
         )}
         {!isPro && (
