@@ -11,12 +11,11 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
   const [folderName, setFolderName] = useState("");
   const [fileCount, setFileCount] = useState(0);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const usage = trpc.usage.status.useQuery({ email: email || undefined, tier: isPro ? "pro" : undefined }, { enabled: email.length > 0 });
+  const usage = trpc.usage.status.useQuery({ tier: isPro ? "pro" : undefined }, { enabled: !isPro });
   const remaining = isPro ? Infinity : (usage.data?.remaining ?? 0);
   const limitReached = !isPro && remaining <= 0;
 
@@ -43,7 +42,6 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
         formData.append("files", files[i], files[i].webkitRelativePath);
       }
       if (name.trim()) formData.append("name", name.trim());
-      if (email.trim()) formData.append("email", email.trim());
       if (isPro) formData.append("tier", "pro");
 
       const res = await fetch("/api/upload-folder", { method: "POST", body: formData });
@@ -133,11 +131,6 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="My Site Audit" className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 outline-none transition-shadow ${isPro ? "bg-slate-800/50 border-indigo-800/40 text-indigo-100 placeholder-indigo-300/30 focus:ring-indigo-500 focus:border-indigo-500" : "bg-white border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"}`} />
           </div>
 
-          <div className="mt-5">
-            <label className={`block text-sm font-semibold mb-1.5 ${isPro ? "text-indigo-200" : "text-slate-700"}`}>Email {isPro ? <span className="font-normal text-indigo-400/50">(optional)</span> : <span className="font-normal text-slate-400">(required for usage tracking)</span>}</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 outline-none transition-shadow ${isPro ? "bg-slate-800/50 border-indigo-800/40 text-indigo-100 placeholder-indigo-300/30 focus:ring-indigo-500 focus:border-indigo-500" : "bg-white border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"}`} />
-          </div>
-
           {error && (
             <div className={`mt-5 p-4 border rounded-xl text-sm flex items-start gap-3 ${isPro ? "bg-red-900/20 border-red-800/30 text-red-300" : "bg-red-50 border-red-200 text-red-700"}`}>
               <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -147,7 +140,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
 
           <button
             type="submit"
-            disabled={uploading || !folderName || (!isPro && !email.trim())}
+            disabled={uploading || !folderName}
             className={`mt-6 w-full py-3.5 text-white rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] ${isPro ? "bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:from-indigo-500 hover:to-purple-500" : "bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md shadow-indigo-200 hover:shadow-lg hover:from-indigo-700 hover:to-purple-700"}`}
           >
             {uploading ? (
