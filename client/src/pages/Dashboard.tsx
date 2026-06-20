@@ -170,19 +170,18 @@ export default function Dashboard({ auditId, onBack }: Props) {
   }
 
   function exportPDF() {
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${a.name || "Audit Report"}</title>
-<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#333}h1{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:10px}.score{font-size:48px;font-weight:800;text-align:center;margin:20px 0}.meta{color:#64748b;font-size:14px}.module{border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:12px 0}.module h3{margin:0 0 8px}.issue{margin:8px 0;padding:8px;background:#f8fafc;border-radius:4px}.severity{font-weight:600;text-transform:uppercase;font-size:11px}.severity.critical{color:#dc2626}.severity.high{color:#f59e0b}.severity.medium{color:#3b82f6}.severity.low{color:#94a3b8}</style></head><body>
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${a.name || "Audit Report"}</title>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#333}@media print{body{margin:0;padding:20px}}h1{color:#4f46e5;border-bottom:2px solid #e2e8f0;padding-bottom:10px}.score{font-size:48px;font-weight:800;text-align:center;margin:20px 0}.meta{color:#64748b;font-size:14px}.module{border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:12px 0;page-break-inside:avoid}.module h3{margin:0 0 8px}.issue{margin:8px 0;padding:8px;background:#f8fafc;border-radius:4px}.severity{font-weight:600;text-transform:uppercase;font-size:11px}.severity.critical{color:#dc2626}.severity.high{color:#f59e0b}.severity.medium{color:#3b82f6}.severity.low{color:#94a3b8}</style></head><body>
 <h1>${a.name || "Untitled Audit"}</h1>
 <p class="meta">${a.sourceType} — ${a.sourcePath} &middot; ${formatDate(a.createdAt)}</p>
 <div class="score">${a.overallScore ?? "N/A"}<span style="font-size:18px;color:#94a3b8">/100</span></div>
 <p style="text-align:center;color:#64748b">Overall Website Integrity Score</p>
 <p style="text-align:center">Critical: ${a.criticalIssues ?? 0} &middot; High: ${a.highIssues ?? 0} &middot; Medium: ${a.mediumIssues ?? 0} &middot; Low: ${a.lowIssues ?? 0}</p>
 ${modIssues.map((m: any) => `<div class="module"><h3>${m.moduleName || m.moduleId} <span style="font-size:14px;color:#64748b">${m.score}/100</span></h3>${(m.issues || []).map((i: any) => `<div class="issue"><span class="severity ${i.severity}">[${i.severity}]</span> <strong>${i.title}</strong>${i.filePath ? `<br><span style="font-size:12px;color:#64748b">${i.filePath}</span>` : ""}<br><span style="font-size:13px">${i.description}</span></div>`).join("")}</div>`).join("")}
-</body></html>`;
-    const blob = new Blob([html], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const aEl = document.createElement("a"); aEl.href = url; aEl.download = `${a.name || "audit"}-report.pdf`; aEl.click();
-    URL.revokeObjectURL(url);
+<script>window.onload=function(){window.print()}</script></body></html>`);
+    win.document.close();
     setShowExport(false);
   }
 
