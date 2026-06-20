@@ -61,7 +61,9 @@ export default function Home({ onAuditStarted }: HomeProps) {
           Scan. Analyze. <span className="relative"><span className="gradient-text">Fix.</span><span className="absolute -top-4 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded whitespace-nowrap z-10">Pro Feature</span></span>
         </h1>
         <div className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          16 modules for comprehensive website auditing. Upload your site folder to get started.
+          Comprehensive AI-powered auditing for integrity, SEO, accessibility, and compliance.
+          16 modules across 4 input modes. 
+          Get your website scanned before Deployment.
         </div>
       </div>
 
