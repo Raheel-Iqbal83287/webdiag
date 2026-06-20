@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "../lib/trpc";
 import { formatDate } from "../lib/utils";
 
-interface Props { onSelectAudit: (id: string) => void; onCompare: (id1: string, id2: string) => void }
+interface Props { onSelectAudit: (id: string) => void; onCompare: (id1: string, id2: string) => void; onBack: () => void }
 
 const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
   completed: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
@@ -62,10 +62,15 @@ export default function History({ onSelectAudit, onCompare }: Props) {
   return (
     <div className="animate-fadeIn">
       <div className="flex items-center justify-between mb-6">
-        <div>
+        <div className="flex items-center gap-4">
+          <button onClick={() => { if (window.history.length > 1) { window.history.back() } else { onBack() } }} className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" aria-label="Go back">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <div>
           <h1 className="text-2xl font-bold text-slate-900">Audit History <span className="ml-2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle">Pro</span></h1>
           <p className="text-sm text-slate-500 mt-0.5">{displayAudits.length} audit{displayAudits.length !== 1 ? "s" : ""} total</p>
         </div>
+          </div>
         {selectedIds.length === 2 && (
           <button onClick={() => onCompare(selectedIds[0], selectedIds[1])} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all shadow-sm">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
