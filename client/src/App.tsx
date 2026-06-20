@@ -32,12 +32,12 @@ export default function App() {
             </div>
           </button>
           <nav className="flex items-center gap-1">
-              <button onClick={() => setPage({ name: "home" })}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${page.name === "home" ? "bg-indigo-50 text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"}`}>
+              <button disabled
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 cursor-not-allowed">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
-                New Audit
+                New Audit <span className="px-1 py-0.5 bg-indigo-600 text-white text-[8px] font-bold uppercase rounded">Pro</span>
               </button>
               <button disabled
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 cursor-not-allowed">
