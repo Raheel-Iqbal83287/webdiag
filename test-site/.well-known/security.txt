@@ -1,0 +1,6 @@
+# Security.txt — Security Vulnerability Disclosure Policy
+Contact: mailto:security@test-site.com
+Expires: 2027-06-18T12:19:31.788Z
+Preferred-Languages: en
+Canonical: https://example.com/.well-known/security.txt
+Policy: https://example.com/security-policy.html

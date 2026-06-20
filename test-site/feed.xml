@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Test Site</title>
+    <link>https://example.com/</link>
+    <description>Website Diagnostic Tool - Test Site Updates and Articles</description>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 19 Jun 2026 00:00:00 GMT</lastBuildDate>
+    <atom:link href="https://example.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Getting Started with Website Audits</title>
+      <link>https://example.com/blog</link>
+      <description>Learn how to run your first comprehensive website audit using our diagnostic tool.</description>
+      <pubDate>Mon, 15 Jun 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Common SEO Mistakes and How to Fix Them</title>
+      <link>https://example.com/blog</link>
+      <description>Many websites lose search traffic due to easily fixable issues.</description>
+      <pubDate>Mon, 08 Jun 2026 00:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
