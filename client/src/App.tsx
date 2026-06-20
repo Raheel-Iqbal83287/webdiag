@@ -29,7 +29,7 @@ export default function App() {
             <div>
                 <span className="font-bold text-slate-800 text-lg tracking-tight">WebDiag</span>
                 <span className="text-xs text-slate-400 ml-2 font-medium">Website Diagnostics</span>
-                <span className="ml-2 px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle">Free</span>
+                <span className="ml-2 px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle">Free Tier</span>
               </div>
           </button>
           <nav className="flex items-center gap-1">
