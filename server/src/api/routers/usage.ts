@@ -11,7 +11,8 @@ function getMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export async function checkUsage(ip: string, email?: string): Promise<{ allowed: boolean; remaining: number; month: string }> {
+export async function checkUsage(ip: string, email?: string, tier: "free" | "pro" = "free"): Promise<{ allowed: boolean; remaining: number; month: string }> {
+  if (tier === "pro") return { allowed: true, remaining: Infinity, month: getMonth() };
   const { db } = await getDb();
   const month = getMonth();
   const conditions = [eq(schema.usage.month, month)];
@@ -25,7 +26,8 @@ export async function checkUsage(ip: string, email?: string): Promise<{ allowed:
   return { allowed: count < FREE_SCANS_PER_MONTH, remaining: Math.max(0, FREE_SCANS_PER_MONTH - count), month };
 }
 
-export async function incrementUsage(ip: string, email?: string): Promise<void> {
+export async function incrementUsage(ip: string, email?: string, tier: "free" | "pro" = "free"): Promise<void> {
+  if (tier === "pro") return;
   const { db } = await getDb();
   const month = getMonth();
   const identifier = email || ip;
@@ -39,14 +41,14 @@ export async function incrementUsage(ip: string, email?: string): Promise<void> 
   saveDb();
 }
 
-export async function getUsageStatus(ip: string, email?: string) {
-  return await checkUsage(ip, email);
+export async function getUsageStatus(ip: string, email?: string, tier?: string) {
+  return await checkUsage(ip, email, tier as "free" | "pro");
 }
 
 export const usageRouter = router({
   status: publicProcedure
-    .input(z.object({ email: z.string().optional() }))
+    .input(z.object({ email: z.string().optional(), tier: z.string().optional() }))
     .query(async ({ ctx, input }) => {
-      return await checkUsage(ctx.ip, input.email);
+      return await checkUsage(ctx.ip, input.email, input.tier as "free" | "pro" | undefined);
     }),
 });

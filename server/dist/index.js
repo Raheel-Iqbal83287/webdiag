@@ -33,8 +33,9 @@ async function main() {
         try {
             const ip = req.ip || req.socket.remoteAddress || "unknown";
             const email = req.body.email;
+            const tier = req.body.tier || "free";
             const { checkUsage, incrementUsage } = await import("./api/routers/usage.js");
-            const usage = await checkUsage(ip, email);
+            const usage = await checkUsage(ip, email, tier);
             if (!usage.allowed) {
                 res.status(403).json({ error: `Free tier limit reached. Upgrade to Pro for unlimited scans.` });
                 return;
@@ -60,10 +61,10 @@ async function main() {
                 status: "pending", createdAt: new Date().toISOString(),
             });
             saveDb();
-            await incrementUsage(ip, email);
+            await incrementUsage(ip, email, tier);
             const { runAuditAsync } = await import("./api/routers/audit.js");
-            runAuditAsync(id, "folder", targetDir, "free");
-            res.json({ id, status: "pending", tier: "free" });
+            runAuditAsync(id, "folder", targetDir, tier);
+            res.json({ id, status: "pending", tier: tier });
         }
         catch (err) {
             res.status(500).json({ error: err instanceof Error ? err.message : "Upload failed" });

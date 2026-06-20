@@ -12,9 +12,10 @@ import { checkUsage, incrementUsage } from "./usage.js";
 const auditProgress = new Map();
 export const auditRouter = router({
     create: publicProcedure
-        .input(z.object({ name: z.string().optional(), email: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
+        .input(z.object({ name: z.string().optional(), email: z.string().optional(), tier: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
         .mutation(async ({ input, ctx }) => {
-        const usage = await checkUsage(ctx.ip, input.email);
+        const t = input.tier || "free";
+        const usage = await checkUsage(ctx.ip, input.email, t);
         if (!usage.allowed)
             throw new Error(`Free tier limit reached (${usage.remaining} scans remaining this month). Upgrade to Pro for unlimited scans.`);
         const { db } = await getDb();
@@ -23,10 +24,10 @@ export const auditRouter = router({
             throw new Error(`Folder not found: ${input.sourcePath}`);
         await db.insert(schema.audits).values({ id, name: input.name || `Audit - ${new Date().toLocaleDateString()}`, sourceType: input.sourceType, sourcePath: input.sourcePath, status: "pending", createdAt: new Date().toISOString() });
         saveDb();
-        await incrementUsage(ctx.ip, input.email);
+        await incrementUsage(ctx.ip, input.email, t);
         auditProgress.set(id, { progress: 0, currentStep: "Initializing..." });
-        runAuditAsync(id, input.sourceType, input.sourcePath, "free").catch(() => { });
-        return { id, status: "pending", tier: "free" };
+        runAuditAsync(id, input.sourceType, input.sourcePath, t).catch(() => { });
+        return { id, status: "pending", tier: t };
     }),
     status: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
         const { db } = await getDb();

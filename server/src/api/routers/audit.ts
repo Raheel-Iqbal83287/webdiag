@@ -14,9 +14,10 @@ const auditProgress = new Map<string, { progress: number; currentStep: string }>
 
 export const auditRouter = router({
   create: publicProcedure
-    .input(z.object({ name: z.string().optional(), email: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
+    .input(z.object({ name: z.string().optional(), email: z.string().optional(), tier: z.string().optional(), sourceType: z.enum(["folder"]), sourcePath: z.string().min(1) }))
     .mutation(async ({ input, ctx }) => {
-      const usage = await checkUsage(ctx.ip, input.email);
+      const t = (input.tier as "free" | "pro") || "free";
+      const usage = await checkUsage(ctx.ip, input.email, t);
       if (!usage.allowed) throw new Error(`Free tier limit reached (${usage.remaining} scans remaining this month). Upgrade to Pro for unlimited scans.`);
 
       const { db } = await getDb();
@@ -26,12 +27,12 @@ export const auditRouter = router({
       await db.insert(schema.audits).values({ id, name: input.name || `Audit - ${new Date().toLocaleDateString()}`, sourceType: input.sourceType, sourcePath: input.sourcePath, status: "pending", createdAt: new Date().toISOString() });
       saveDb();
 
-      await incrementUsage(ctx.ip, input.email);
+      await incrementUsage(ctx.ip, input.email, t);
 
       auditProgress.set(id, { progress: 0, currentStep: "Initializing..." });
-      runAuditAsync(id, input.sourceType, input.sourcePath, "free").catch(() => {});
+      runAuditAsync(id, input.sourceType, input.sourcePath, t).catch(() => {});
 
-      return { id, status: "pending" as const, tier: "free" as const };
+      return { id, status: "pending" as const, tier: t };
     }),
 
   status: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {

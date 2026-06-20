@@ -3,10 +3,11 @@ import { trpc } from "../lib/trpc";
 import { moduleDefs } from "../lib/modules";
 
 interface HomeProps {
+  isPro: boolean;
   onAuditStarted: (id: string) => void;
 }
 
-export default function Home({ onAuditStarted }: HomeProps) {
+export default function Home({ isPro, onAuditStarted }: HomeProps) {
   const [folderName, setFolderName] = useState("");
   const [fileCount, setFileCount] = useState(0);
   const [name, setName] = useState("");
@@ -15,8 +16,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
   const [uploading, setUploading] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const usage = trpc.usage.status.useQuery({ email: email || undefined }, { enabled: email.length > 0 });
-  const isPro = false;
+  const usage = trpc.usage.status.useQuery({ email: email || undefined, tier: isPro ? "pro" : undefined }, { enabled: email.length > 0 });
   const remaining = isPro ? Infinity : (usage.data?.remaining ?? 0);
   const limitReached = !isPro && remaining <= 0;
 
@@ -44,6 +44,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
       }
       if (name.trim()) formData.append("name", name.trim());
       if (email.trim()) formData.append("email", email.trim());
+      if (isPro) formData.append("tier", "pro");
 
       const res = await fetch("/api/upload-folder", { method: "POST", body: formData });
       const data = await res.json();
@@ -65,7 +66,7 @@ export default function Home({ onAuditStarted }: HomeProps) {
           Autonomous Website Integrity Scanner
         </div>
         <h1 className="text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
-          Scan. Analyze. <span className="relative"><span className="gradient-text">Fix.</span><span className="absolute -top-4 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded whitespace-nowrap z-10">Pro Feature</span></span>
+          Scan. Analyze. <span className="relative"><span className="gradient-text">Fix.</span>{!isPro && <span className="absolute -top-4 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded whitespace-nowrap z-10">Pro Feature</span>}</span>
         </h1>
         <div className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
           Comprehensive AI-powered Auditing for Integrity, SEO, Accessibility, and Compliance.

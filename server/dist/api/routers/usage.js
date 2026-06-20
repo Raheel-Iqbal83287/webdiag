@@ -8,7 +8,9 @@ function getMonth() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
-export async function checkUsage(ip, email) {
+export async function checkUsage(ip, email, tier = "free") {
+    if (tier === "pro")
+        return { allowed: true, remaining: Infinity, month: getMonth() };
     const { db } = await getDb();
     const month = getMonth();
     const conditions = [eq(schema.usage.month, month)];
@@ -22,7 +24,9 @@ export async function checkUsage(ip, email) {
     const count = row?.scanCount ?? 0;
     return { allowed: count < FREE_SCANS_PER_MONTH, remaining: Math.max(0, FREE_SCANS_PER_MONTH - count), month };
 }
-export async function incrementUsage(ip, email) {
+export async function incrementUsage(ip, email, tier = "free") {
+    if (tier === "pro")
+        return;
     const { db } = await getDb();
     const month = getMonth();
     const identifier = email || ip;
@@ -36,14 +40,14 @@ export async function incrementUsage(ip, email) {
     }
     saveDb();
 }
-export async function getUsageStatus(ip, email) {
-    return await checkUsage(ip, email);
+export async function getUsageStatus(ip, email, tier) {
+    return await checkUsage(ip, email, tier);
 }
 export const usageRouter = router({
     status: publicProcedure
-        .input(z.object({ email: z.string().optional() }))
+        .input(z.object({ email: z.string().optional(), tier: z.string().optional() }))
         .query(async ({ ctx, input }) => {
-        return await checkUsage(ctx.ip, input.email);
+        return await checkUsage(ctx.ip, input.email, input.tier);
     }),
 });
 //# sourceMappingURL=usage.js.map
