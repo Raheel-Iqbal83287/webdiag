@@ -342,7 +342,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
                       No issues found
                     </div>
                   ) : (
-                    <div className="divide-y divide-slate-100 select-none">
+                    <div className="divide-y divide-slate-100">
                       {mod.issues.map((issue: any) => (
                         <div key={issue.id} className="p-5 hover:bg-slate-50 transition-colors">
                           <div className="flex items-start gap-3">
