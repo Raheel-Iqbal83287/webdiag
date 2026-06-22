@@ -71,7 +71,7 @@ export default function App() {
     <div className={`min-h-screen ${isPro ? "bg-slate-950" : "bg-slate-100"}`}>
       <header className={`sticky top-0 z-50 transition-all ${isPro ? "pro-header" : "bg-white border-b border-slate-200"}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => { if (page.name === "home") { setPage(user ? { name: "home" } : { name: "landing" }); } else { setPage({ name: "home" }); } }} className="flex items-center gap-3 hover:opacity-80 transition-all group">
+          <div className="flex items-center gap-3 hover:opacity-80 transition-all group">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow ${isPro ? "bg-gradient-to-br from-indigo-400 to-purple-500" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -82,7 +82,7 @@ export default function App() {
                 <span className={`text-xs ml-2 font-medium ${isPro ? "text-indigo-300" : "text-slate-400"}`}>Website Diagnostics</span>
                 {page.name !== "landing" && page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <span className={`ml-2 px-1.5 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle ${isPro ? "pro-badge" : "bg-emerald-500"}`}>{isPro ? "Pro" : "Free Tier"}</span>}
               </div>
-          </button>
+          </div>
           <div className="flex items-center gap-2">
             {page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
