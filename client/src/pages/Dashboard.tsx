@@ -93,7 +93,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
             <div className="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin" />
           </div>
           <h2 className={`text-xl font-bold mb-1 ${isPro ? "text-white" : "text-slate-800"}`}>{statusData?.currentStep || "Initializing audit..."}</h2>
-          <p className={`text-sm mb-6 ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>Analyzing your website across 16 modules</p>
+          <p className={`text-sm mb-6 ${isPro ? "text-indigo-300/60" : "text-slate-500"}`}>Analyzing your website across {isPro ? "16" : "4"} modules</p>
           <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500" style={{ width: `${statusData?.progress || 0}%` }} />
           </div>
@@ -347,7 +347,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
       <div className="flex items-center justify-between mb-4">
         <h2 className={`text-lg font-bold flex items-center gap-2 ${isPro ? "text-white" : "text-slate-800"}`}>
           <svg className={`w-5 h-5 ${isPro ? "text-indigo-400" : "text-indigo-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-          16 Audit Modules
+          {isPro ? "16" : "4"} Audit Modules
         </h2>
         <div className="flex gap-1">
           {[{ l: "All", v: null }, { l: "Critical", v: "critical" }, { l: "Failed", v: "fail" }, { l: "Warning", v: "warning" }, { l: "Passed", v: "zero" }].map(({ l, v }) => (
@@ -403,7 +403,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
                         style={{ width: `${mod.score}%` }} />
                     </div>
                     <span className={`text-xs font-medium ${isPro ? "text-indigo-300/50" : "text-slate-400"}`}>{issueCount} issue{issueCount !== 1 ? "s" : ""}</span>
-                    {issueCount > 0 && (
+                    {isPro && issueCount > 0 && (
                       <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); copyModuleIssues(mod, def.name); }}
                         className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-100 transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
