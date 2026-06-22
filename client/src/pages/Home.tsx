@@ -72,7 +72,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
           </div>
         )}
         <h1 className={`text-5xl font-extrabold mb-4 tracking-tight ${isPro ? "text-white" : "text-slate-900"}`}>
-          Scan. <span className={isPro ? "text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400" : "gradient-text"}>Analyze.</span>
+          Scan. <span className="relative"><span className={isPro ? "text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400" : "gradient-text"}>Analyze.</span>{!isPro && <span className="absolute -top-4 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded whitespace-nowrap z-10">Pro Feature</span>}</span>
         </h1>
         <div className={`text-lg max-w-2xl mx-auto leading-relaxed ${isPro ? "text-indigo-200" : "text-slate-500"}`}>
           Comprehensive AI-powered Auditing for Integrity, SEO, Accessibility, and Compliance.
