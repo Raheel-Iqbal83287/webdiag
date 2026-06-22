@@ -26,7 +26,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (isPro) return;
+    if (isPro || page.name === "landing") return;
     const onContextMenu = (e: MouseEvent) => { e.preventDefault(); };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) || (e.ctrlKey && e.key === "U")) {
@@ -39,7 +39,7 @@ export default function App() {
       document.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [isPro]);
+  }, [isPro, page.name]);
 
   return (
     <div className={`min-h-screen ${isPro ? "bg-slate-950" : "bg-slate-100"}`}>
