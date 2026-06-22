@@ -12,6 +12,7 @@ export default function App() {
   const [isPro] = useState(isProTier());
   const [page, setPage] = useState<Page>(isPro ? { name: "home" } : { name: "landing" });
   const [prevPage, setPrevPage] = useState<Page>(isPro ? { name: "home" } : { name: "landing" });
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const navigateToHistory = () => {
     setPrevPage(page);
