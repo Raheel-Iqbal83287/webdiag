@@ -25,3 +25,11 @@ export const audits = sqliteTable("audits", {
   createdAt: text("created_at").notNull(),
   completedAt: text("completed_at"),
 });
+
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull().default(""),
+  password: text("password").notNull(),
+  createdAt: text("created_at").notNull(),
+});

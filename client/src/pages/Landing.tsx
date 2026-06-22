@@ -3,9 +3,10 @@ import { moduleDefs } from "../lib/modules";
 interface LandingProps {
   onStartFree: () => void;
   onPricing: () => void;
+  onLogin: () => void;
 }
 
-export default function Landing({ onStartFree, onPricing }: LandingProps) {
+export default function Landing({ onStartFree, onPricing, onLogin }: LandingProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Hero */}
@@ -39,7 +40,7 @@ export default function Landing({ onStartFree, onPricing }: LandingProps) {
               className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-md shadow-indigo-200 hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all active:scale-[0.98]">
               Start Free
             </button>
-            <button onClick={onStartFree}
+            <button onClick={onLogin}
               className="px-8 py-3.5 bg-white text-slate-700 rounded-xl font-semibold border border-slate-300 hover:border-indigo-400 hover:text-indigo-600 shadow-sm hover:shadow transition-all active:scale-[0.98]">
               Log in
             </button>

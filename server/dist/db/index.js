@@ -52,6 +52,15 @@ export async function getDb() {
       completed_at TEXT
     )
   `);
+    sqliteInstance.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL DEFAULT '',
+      password TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `);
     saveDb();
     drizzleInstance = drizzle(sqliteInstance, { schema });
     return { db: drizzleInstance, sqlite: sqliteInstance };
