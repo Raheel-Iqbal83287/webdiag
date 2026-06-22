@@ -462,7 +462,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
                         style={{ width: `${mod.score}%` }} />
                     </div>
                     <span className={`text-xs font-medium ${isPro ? "text-indigo-300/50" : "text-slate-400"}`}>{issueCount} issue{issueCount !== 1 ? "s" : ""}</span>
-                    {issueCount > 0 && (
+                    {isPro && issueCount > 0 && (
                       <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleFix(mod.issues.map((i: any) => i.id)); }}
                         className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -501,6 +501,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
                               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                 <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ backgroundColor: severityColor(issue.severity) + "15", color: severityColor(issue.severity) }}>{issue.severity}</span>
                                 <span className="text-sm font-medium text-slate-800">{issue.title}</span>
+                                {isPro && (
                                 <button onClick={(e) => { e.stopPropagation(); handleFix([issue.id]); }} disabled={fixBusy.includes(issue.id)}
                                   className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50">
                                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -508,6 +509,7 @@ export default function Dashboard({ auditId, onBack }: Props) {
                                   </svg>
                                   {fixBusy.includes(issue.id) ? "..." : "Fix"}
                                 </button>
+                                )}
                               </div>
                               <p className="text-xs text-slate-500 mt-1 leading-relaxed">{issue.filePath ? issue.description.replace(issue.filePath, "").replace(/:/g, "").replace(/[\s,;.\-]+$/, "") : issue.description}</p>
                               {issue.filePath && (
