@@ -163,7 +163,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
       <div>
         <h2 className={`text-lg font-bold mb-4 flex items-center gap-2 ${isPro ? "text-white" : "text-slate-800"}`}>
           <svg className={`w-5 h-5 ${isPro ? "text-indigo-400" : "text-indigo-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-                    {isPro ? "16" : "6"} Audit Modules
+                    {isPro ? "16" : "4"} Audit Modules
           
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
