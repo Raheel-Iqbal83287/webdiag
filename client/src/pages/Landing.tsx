@@ -40,7 +40,7 @@ export default function Landing({ onStartFree }: LandingProps) {
             </button>
             <button onClick={onStartFree}
               className="px-8 py-3.5 bg-white text-slate-700 rounded-xl font-semibold border border-slate-300 hover:border-indigo-400 hover:text-indigo-600 shadow-sm hover:shadow transition-all active:scale-[0.98]">
-              Sign up / Log in
+              Log in
             </button>
           </div>
         </div>
