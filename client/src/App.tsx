@@ -55,10 +55,10 @@ export default function App() {
             <div>
                 <span className={`font-bold text-lg tracking-tight ${isPro ? "text-white" : "text-slate-800"}`}>WebDiag</span>
                 <span className={`text-xs ml-2 font-medium ${isPro ? "text-indigo-300" : "text-slate-400"}`}>Website Diagnostics</span>
-                {page.name !== "landing" && <span className={`ml-2 px-1.5 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle ${isPro ? "pro-badge" : "bg-emerald-500"}`}>{isPro ? "Pro" : "Free Tier"}</span>}
+                {page.name !== "landing" && page.name !== "pricing" && <span className={`ml-2 px-1.5 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle ${isPro ? "pro-badge" : "bg-emerald-500"}`}>{isPro ? "Pro" : "Free Tier"}</span>}
               </div>
           </button>
-          <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
+          {page.name !== "pricing" && <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
               isPro ? "text-indigo-300 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
             }`}>
@@ -66,8 +66,8 @@ export default function App() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Pricing
-          </button>
-          {page.name !== "landing" && <nav className="flex items-center gap-1">
+          </button>}
+          {page.name !== "landing" && page.name !== "pricing" && <nav className="flex items-center gap-1">
               <button disabled={!isPro}
                 onClick={() => setPage({ name: "home" })}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${!isPro ? "text-slate-300 cursor-not-allowed" : isPro ? (page.name === "home" ? "bg-indigo-500/20 text-indigo-300 shadow-sm" : "text-indigo-200 hover:text-white hover:bg-white/5") : page.name === "home" ? "bg-indigo-50 text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"}`}>
