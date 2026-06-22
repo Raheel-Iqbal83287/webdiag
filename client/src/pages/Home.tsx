@@ -109,6 +109,7 @@ export default function Home({ isPro, onAuditStarted }: HomeProps) {
         ) : (
         <form onSubmit={handleSubmit}>
           <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${isPro ? "border-indigo-500/30 hover:border-indigo-400 bg-indigo-500/5" : "border-slate-300 hover:border-indigo-400"}`} onClick={() => folderInputRef.current?.click()}>
+            {/* @ts-expect-error webkitdirectory is a non-standard attribute */}
             <input type="file" ref={folderInputRef} webkitdirectory="" multiple className="hidden" onChange={handleFolderSelect} />
             <svg className={`w-12 h-12 mx-auto mb-4 ${isPro ? "text-indigo-400" : "text-slate-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
