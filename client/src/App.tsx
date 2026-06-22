@@ -3,13 +3,14 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Compare from "./pages/Compare";
+import Landing from "./pages/Landing";
 import { isProTier } from "./lib/tier";
 
-type Page = { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string };
+type Page = { name: "landing" } | { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string };
 
 export default function App() {
-  const [page, setPage] = useState<Page>({ name: "home" });
-  const [prevPage, setPrevPage] = useState<Page>({ name: "home" });
+  const [page, setPage] = useState<Page>({ name: "landing" });
+  const [prevPage, setPrevPage] = useState<Page>({ name: "landing" });
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isPro] = useState(isProTier());
 
@@ -41,10 +42,11 @@ export default function App() {
   }, [isPro]);
 
   return (
-    <div className={`min-h-screen ${isPro ? "bg-slate-950" : "bg-slate-100"}`}>
+    <div className={`min-h-screen ${isPro ? "bg-slate-950" : page.name === "landing" ? "bg-white" : "bg-slate-100"}`}>
+      {page.name !== "landing" && (
       <header className={`sticky top-0 z-50 transition-all ${isPro ? "pro-header" : "bg-white border-b border-slate-200"}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => setPage({ name: "home" })} className="flex items-center gap-3 hover:opacity-80 transition-all group">
+          <button onClick={() => setPage({ name: page.name === "home" ? "landing" : "home" })} className="flex items-center gap-3 hover:opacity-80 transition-all group">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow ${isPro ? "bg-gradient-to-br from-indigo-400 to-purple-500" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -76,8 +78,10 @@ export default function App() {
           </nav>
         </div>
       </header>
+      )}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-fadeIn">
+          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} />}
           {page.name === "home" && <Home isPro={isPro} onAuditStarted={(id) => setPage({ name: "dashboard", auditId: id })} />}
           {page.name === "dashboard" && <Dashboard auditId={page.auditId} onBack={() => setPage({ name: "home" })} />}
           {page.name === "history" && <History onSelectAudit={(id) => setPage({ name: "dashboard", auditId: id })} onCompare={(id1, id2) => setPage({ name: "compare", id1, id2 })} onBack={() => setPage(prevPage)} />}
@@ -85,7 +89,7 @@ export default function App() {
         </div>
       </main>
 
-      {showScrollTop && (
+      {page.name !== "landing" && showScrollTop && (
         <button aria-label="Scroll to top" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-2xl text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${isPro ? "bg-gradient-to-br from-indigo-500 to-purple-600 pro-glow" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -94,11 +98,13 @@ export default function App() {
         </button>
       )}
 
+      {page.name !== "landing" && (
       <footer className={`border-t ${isPro ? "border-indigo-900/40 bg-slate-900" : "border-slate-200 bg-white"}`}>
         <div className={`max-w-7xl mx-auto px-6 py-4 text-center text-xs ${isPro ? "text-indigo-300" : "text-slate-400"}`}>
           &copy; 2026 WebDiag{isPro && <span className="ml-2 text-indigo-400 font-semibold">Pro</span>}
         </div>
       </footer>
+      )}
     </div>
   );
 }
