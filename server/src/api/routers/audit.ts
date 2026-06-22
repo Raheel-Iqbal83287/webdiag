@@ -63,6 +63,13 @@ export const auditRouter = router({
     return { success: true };
   }),
 
+  clearAll: publicProcedure.mutation(async () => {
+    const { db } = await getDb();
+    await db.delete(schema.audits).run();
+    saveDb();
+    return { success: true };
+  }),
+
   canFix: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     const { db } = await getDb();
     const result = await db.select().from(schema.audits).where(eq(schema.audits.id, input.id)).get();

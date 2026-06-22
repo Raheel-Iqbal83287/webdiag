@@ -20,7 +20,7 @@ import { auditFinalVerification } from "../modules/14-final-verification/index.j
 export const TIER_MODULES = {
   basic: [
     "01-page-existence", "04-css-js-integrity", "07-dead-links",
-    "10-accessibility", "11-performance", "13-security",
+    "10-accessibility",
   ],
   pro: [
     "01-page-existence", "02-sitemap", "03-robots-txt", "04-css-js-integrity",

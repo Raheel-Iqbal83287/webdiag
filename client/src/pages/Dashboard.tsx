@@ -19,17 +19,8 @@ export default function Dashboard({ auditId, onBack }: Props) {
   const isPro = isProTier();
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
-  const [fixBusy, setFixBusy] = useState<string[]>([]);
-  const [fixPreview, setFixPreview] = useState<any>(null);
-  const [fixResults, setFixResults] = useState<any>(null);
-  const [previewIssueIds, setPreviewIssueIds] = useState<string[]>([]);
-
   const { data: statusData } = trpc.audit.status.useQuery({ id: auditId }, { refetchInterval: (q) => { const d = q.state.data; return (d?.status === "completed" || d?.status === "failed") ? false : 1000; } });
   const { data: audit, refetch } = trpc.audit.results.useQuery({ id: auditId }, { enabled: false });
-  const { data: fixData } = trpc.audit.canFix.useQuery({ id: auditId }, { enabled: !!audit });
-
-  const dryRunMutation = trpc.audit.dryRunFixes.useQuery({ id: auditId, issueIds: [] }, { enabled: false });
-  const applyMutation = trpc.audit.applyFixes.useMutation();
 
   useEffect(() => { if (statusData?.status === "completed" || statusData?.status === "failed") refetch(); }, [statusData, refetch]);
 
@@ -43,6 +34,53 @@ export default function Dashboard({ auditId, onBack }: Props) {
       lines.push("");
     });
     navigator.clipboard.writeText(lines.join("\n"));
+  }
+
+  function buildSuggestion(issue: any): { action: string; reason: string; steps: string; impact: string } {
+    const s = issue.suggestion || "";
+    const d = issue.description || "";
+    const t = issue.title || "";
+    const isMissing = /missing|not found|no\s+\w+\s+found|does not have|is missing|lacks|absent/i.test(d) || /missing|not found|create|add/i.test(t);
+    const isInvalid = /invalid|incorrect|wrong|malformed|not valid|improper/i.test(d) || /invalid|incorrect/i.test(t);
+    const action = isMissing ? `Create / Add: ${s}` : isInvalid ? `Fix / Update: ${s}` : `Apply: ${s}`;
+    const reasonMap: Record<string, string> = {
+      "sitemap": "Search engines rely on sitemaps to discover all pages on your site. Without one, important pages may never get indexed, reducing your organic visibility.",
+      "robots": "Robots.txt instructs search engine crawlers which parts of your site to access. A missing or misconfigured robots.txt can either block desired pages or expose private content.",
+      "doctype": "The DOCTYPE declaration tells browsers to render the page in standards mode. Without it, browsers may fall back to quirks mode, causing layout inconsistencies.",
+      "lang": "The lang attribute on <html> helps screen readers and browsers interpret the page language correctly. Missing it impacts accessibility and SEO.",
+      "charset": "Character encoding declaration ensures text displays correctly across all browsers. Missing it can cause garbled characters in non-English content.",
+      "title": "Every page needs a unique, descriptive <title>. Search engines display it in results and use it for ranking. Missing titles hurt both SEO and usability.",
+      "viewport": "The viewport meta tag controls how your page displays on mobile devices. Without it, mobile users see a zoomed-out desktop layout.",
+      "canonical": "Canonical URLs prevent duplicate content issues by telling search engines which version of a page is authoritative.",
+      "skip": "Skip-to-content links and <main> landmarks are critical for keyboard and screen reader users to navigate efficiently.",
+      "alt": "Alt text on images provides context for screen readers and serves as a fallback when images fail to load. Essential for accessibility.",
+      "dead": "Broken links create a poor user experience and waste crawl budget. Search engines mark pages with many dead links as low quality.",
+      "security": "Security headers protect your site and its visitors from common attacks like XSS, clickjacking, and data injection.",
+      "performance": "Performance issues directly affect user retention. A 1-second delay can reduce conversions by 7% and increases bounce rates.",
+    };
+    let reason = "";
+    for (const [key, text] of Object.entries(reasonMap)) {
+      if (d.toLowerCase().includes(key) || t.toLowerCase().includes(key) || s.toLowerCase().includes(key)) {
+        reason = text;
+        break;
+      }
+    }
+    if (!reason) {
+      reason = d ? `${d.charAt(0).toUpperCase() + d.slice(1)}. This negatively impacts your site's quality, user experience, and search ranking.` : `"${t}" negatively impacts your site's quality, user experience, and search ranking.`;
+    }
+
+    const severityImpact: Record<string, string> = {
+      critical: "Critical issues directly block search engines, users, or core browser functionality. Fixing them should be your highest priority.",
+      high: "High-severity issues significantly degrade user experience or search performance. Address them as soon as possible.",
+      medium: "Medium-severity issues affect quality and professionalism. While not blocking, fixing them improves your site's overall standard.",
+      low: "Low-severity issues are minor improvements. Resolving them polishes your site and demonstrates attention to detail.",
+    };
+
+    const steps = `${isMissing ? `1. Create the necessary file or element\n2. Follow the suggestion: ${s}\n3. Verify the implementation works correctly` : isInvalid ? `1. Locate the incorrect element at ${issue.filePath || "the reported location"}\n2. Apply the fix: ${s}\n3. Test to confirm the issue is resolved` : `1. Review the current implementation\n2. Apply: ${s}\n3. Re-run the audit to confirm the fix`}`;
+
+    const impact = `${severityImpact[issue.severity] || "Resolving this improves your site's quality and audit score."} Your overall score will increase once this is fixed.`;
+
+    return { action, reason, steps, impact };
   }
 
   // Loading state
@@ -95,35 +133,6 @@ export default function Dashboard({ auditId, onBack }: Props) {
   const radius = 58;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-
-  const fixMap = fixData ? new Map(fixData.map((f: any) => [f.id, f])) : new Map();
-
-  async function handleFix(issueIds: string[]) {
-    setFixBusy(issueIds);
-    try {
-      await applyMutation.mutateAsync({ id: auditId, issueIds });
-      refetch();
-    } catch (err) {
-      alert("Fix failed: " + (err instanceof Error ? err.message : String(err)));
-    }
-    setFixBusy([]);
-  }
-
-  async function handleApplyFix() {
-    setFixResults(null);
-    try {
-      const result = await applyMutation.mutateAsync({ id: auditId, issueIds: previewIssueIds });
-      setFixResults(result);
-      setFixPreview(null);
-      setTimeout(() => { setFixResults(null); refetch(); }, 3000);
-    } catch (err) {
-      alert("Fix failed: " + (err instanceof Error ? err.message : String(err)));
-    }
-  }
-
-  function getModuleIssues(mod: any) {
-    return (mod.issues || []).filter((i: any) => fixMap.get(i.id)?.canFix);
-  }
 
   function buildReportText() {
     let text = `Audit Report: ${a.name || "Untitled"}\n`;
@@ -354,70 +363,6 @@ export default function Dashboard({ auditId, onBack }: Props) {
         </div>
       </div>
 
-      {/* Fix results banner */}
-      {fixResults && (
-        <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-          <div className="flex items-center gap-2 text-emerald-800 font-medium mb-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Fixes Applied
-          </div>
-          <div className="text-sm text-emerald-700 space-y-1">
-            {fixResults.map((r: any, i: number) => (
-              <div key={i} className="flex items-center gap-2">
-                <span>{r.success ? "✓" : "✗"}</span>
-                <span className="font-mono text-xs">{r.filePath}</span>
-                <span className="text-emerald-600">{r.description}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Fix preview modal */}
-      {fixPreview && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setFixPreview(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-slate-200">
-              <h3 className="font-bold text-slate-800">Fix Preview — {fixPreview.length} change{fixPreview.length !== 1 ? "s" : ""}</h3>
-              <button onClick={() => setFixPreview(null)} className="text-slate-400 hover:text-slate-600">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-5 space-y-4">
-              {fixPreview.map((r: any, i: number) => (
-                <div key={i} className="border border-slate-200 rounded-xl overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-sm font-medium text-slate-700 border-b border-slate-200">
-                    <span className="text-xs font-mono text-indigo-600">{r.filePath}</span>
-                    <span className="text-slate-400">·</span>
-                    <span className="text-xs text-slate-500">{r.description}</span>
-                  </div>
-                  {r.diff && (
-                    <pre className="p-4 text-xs font-mono overflow-auto max-h-60 bg-slate-900 text-slate-200 leading-relaxed">{r.diff}</pre>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-200">
-              <button onClick={() => setFixPreview(null)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors">
-                Cancel
-              </button>
-              <button onClick={handleApplyFix} disabled={applyMutation.isPending} className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2">
-                {applyMutation.isPending ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" /></svg>
-                    Applying...
-                  </>
-                ) : "Apply Fixes"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {moduleDefs
           .map((def) => {
@@ -431,7 +376,6 @@ export default function Dashboard({ auditId, onBack }: Props) {
             const hasCritical = mod.issues?.some((i: any) => i.severity === "critical");
             const statusLabel = hasCritical ? "Critical" : issueCount === 0 ? "Passed" : mod.status === "fail" ? "Failed" : "Warning";
             const statusBadge = hasCritical ? "bg-red-50 text-red-700" : issueCount === 0 ? "bg-emerald-50 text-emerald-700" : mod.status === "fail" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700";
-            const fixableIssues = getModuleIssues(mod);
             return (
               <details key={def.id} className={`group rounded-2xl border overflow-hidden card-hover ${isPro ? "bg-slate-900/50 border-indigo-900/30" : "bg-white border-slate-200"}`}>
                 <summary className="p-5 cursor-pointer">
@@ -459,15 +403,6 @@ export default function Dashboard({ auditId, onBack }: Props) {
                         style={{ width: `${mod.score}%` }} />
                     </div>
                     <span className={`text-xs font-medium ${isPro ? "text-indigo-300/50" : "text-slate-400"}`}>{issueCount} issue{issueCount !== 1 ? "s" : ""}</span>
-                    {isPro && issueCount > 0 && (
-                      <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleFix(mod.issues.map((i: any) => i.id)); }}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Fix All
-                      </button>
-                    )}
                     {issueCount > 0 && (
                       <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); copyModuleIssues(mod, def.name); }}
                         className="flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-100 transition-colors">
@@ -498,28 +433,102 @@ export default function Dashboard({ auditId, onBack }: Props) {
                               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                 <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ backgroundColor: severityColor(issue.severity) + "15", color: severityColor(issue.severity) }}>{issue.severity}</span>
                                 <span className="text-sm font-medium text-slate-800">{issue.title}</span>
-                                {isPro && (
-                                <button onClick={(e) => { e.stopPropagation(); handleFix([issue.id]); }} disabled={fixBusy.includes(issue.id)}
-                                  className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50">
-                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                  </svg>
-                                  {fixBusy.includes(issue.id) ? "..." : "Fix"}
-                                </button>
-                                )}
+
                               </div>
                               <p className="text-xs text-slate-500 mt-1 leading-relaxed">{issue.filePath ? issue.description.replace(issue.filePath, "").replace(/:/g, "").replace(/[\s,;.\-]+$/, "") : issue.description}</p>
-                              {issue.filePath && (
+                              {issue.filePath ? (
                                 <div className="flex items-center gap-1.5 mt-1.5 text-xs text-indigo-600 font-mono">
                                   <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                   {issue.filePath}
                                 </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-400 font-mono">
+                                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                  (global)
+                                </div>
                               )}
                               {issue.suggestion && (
-                                <div className="mt-3 p-3 bg-indigo-50 rounded-xl text-xs text-indigo-700">
-                                  <div className="flex items-start gap-2">
-                                    <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-                                    <span>{issue.suggestion}</span>
+                                <div className={`mt-4 relative ${!isPro ? "" : ""}`}>
+                                  {!isPro && (
+                                    <div className="absolute inset-0 backdrop-blur-sm flex items-center justify-center z-10">
+                                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-[9px] font-bold uppercase tracking-wider shadow-lg">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                                        Pro Feature
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className={`relative overflow-hidden rounded-2xl ${!isPro ? "blur-sm select-none" : ""}`}>
+                                    {/* Glow effect */}
+                                    {isPro && <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-indigo-500/20 to-emerald-500/20 blur-xl opacity-60" />}
+                                    <div className={`relative ${isPro ? "bg-slate-900/90 border border-slate-700/50 shadow-2xl shadow-emerald-500/5" : "bg-slate-100"}`}>
+                                      {/* Top gradient line */}
+                                      <div className="h-0.5 bg-gradient-to-r from-emerald-400 via-indigo-400 to-emerald-400" />
+                                      {/* Header */}
+                                      <div className="flex items-center gap-3 px-4 py-3">
+                                        <div className="relative">
+                                          <div className="absolute inset-0 bg-emerald-400/30 blur-md rounded-full" />
+                                          <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                                          </div>
+                                        </div>
+                                        <div className="flex-1">
+                                          <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-indigo-300">Pro Recommendation</span>
+                                          <p className="text-[10px] text-slate-500 mt-0.5">AI-powered fix suggestion</p>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${issue.severity === "critical" ? "bg-red-500/10 text-red-400 border-red-500/20" : issue.severity === "high" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : issue.severity === "medium" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-slate-500/10 text-slate-400 border-slate-500/20"}`}>
+                                          {issue.severity}
+                                        </span>
+                                      </div>
+                                      {/* Divider */}
+                                      <div className="border-t border-slate-700/50" />
+                                      {/* Body */}
+                                      <div className="px-4 py-3.5 space-y-3">
+                                        <div className="flex items-start gap-3">
+                                          <div className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                          </div>
+                                          <div className="flex-1">
+                                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Recommended Action</span>
+                                            <p className="text-sm text-slate-200 leading-relaxed mt-1">{buildSuggestion(issue).action}</p>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                          <div className="w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                          </div>
+                                          <div className="flex-1">
+                                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Why</span>
+                                            <p className="text-sm text-slate-300 leading-relaxed mt-1">{buildSuggestion(issue).reason}</p>
+                                          </div>
+                                        </div>
+                                        <details className="group">
+                                          <summary className="flex items-center gap-2 cursor-pointer list-none">
+                                            <div className="w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                                              <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Implementation Steps</span>
+                                            <svg className="w-3 h-3 text-slate-500 group-open:rotate-90 transition-transform ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                          </summary>
+                                          <div className="mt-2 ml-9">
+                                            <div className="bg-slate-800/60 rounded-xl p-3 border border-slate-700/30">
+                                              {buildSuggestion(issue).steps.split("\n").map((step: string, i: number) => (
+                                                <div key={i} className="flex items-start gap-2 py-0.5">
+                                                  <span className="text-[10px] font-bold text-amber-400/80 w-4 flex-shrink-0 mt-0.5">{step.match(/^\d+/)?.[0] || "•"}</span>
+                                                  <span className="text-xs text-slate-400">{step.replace(/^\d+\.\s*/, "")}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </details>
+                                      </div>
+                                      {/* Footer */}
+                                      <div className="px-4 py-2.5 bg-slate-800/50 border-t border-slate-700/30 flex items-start gap-2.5">
+                                        <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                          <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 leading-relaxed">{buildSuggestion(issue).impact}</p>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               )}

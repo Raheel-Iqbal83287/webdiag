@@ -4,7 +4,7 @@ import { getDb, saveDb } from "../../db/index.js";
 import { schema } from "../../db/index.js";
 import { eq, and } from "drizzle-orm";
 
-const FREE_SCANS_PER_MONTH = 1;
+const FREE_SCANS_PER_MONTH = 3;
 
 function getMonth() {
   const d = new Date();

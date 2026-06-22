@@ -3,7 +3,7 @@ import { router, publicProcedure } from "../trpc.js";
 import { getDb, saveDb } from "../../db/index.js";
 import { schema } from "../../db/index.js";
 import { eq, and } from "drizzle-orm";
-const FREE_SCANS_PER_MONTH = 1;
+const FREE_SCANS_PER_MONTH = 3;
 function getMonth() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
