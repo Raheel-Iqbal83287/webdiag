@@ -96,13 +96,11 @@ export default function App() {
         </button>
       )}
 
-      {page.name !== "landing" && (
       <footer className={`border-t ${isPro ? "border-indigo-900/40 bg-slate-900" : "border-slate-200 bg-white"}`}>
         <div className={`max-w-7xl mx-auto px-6 py-4 text-center text-xs ${isPro ? "text-indigo-300" : "text-slate-400"}`}>
           &copy; 2026 WebDiag{isPro && <span className="ml-2 text-indigo-400 font-semibold">Pro</span>}
         </div>
       </footer>
-      )}
     </div>
   );
 }
