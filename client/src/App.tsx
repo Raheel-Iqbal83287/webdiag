@@ -87,7 +87,7 @@ export default function App() {
         </div>
       </main>
 
-      {page.name !== "landing" && showScrollTop && (
+      {showScrollTop && (
         <button aria-label="Scroll to top" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-2xl text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${isPro ? "bg-gradient-to-br from-indigo-500 to-purple-600 pro-glow" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
