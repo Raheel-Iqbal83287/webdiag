@@ -100,14 +100,11 @@ export default function Dashboard({ auditId, onBack }: Props) {
 
   async function handleFix(issueIds: string[]) {
     setFixBusy(issueIds);
-    setPreviewIssueIds(issueIds);
     try {
-      const result = await dryRunMutation.refetch({ queryKey: ["dryRunFixes", { id: auditId, issueIds }] } as any);
-      if (result.data) {
-        setFixPreview(result.data);
-      }
+      await applyMutation.mutateAsync({ id: auditId, issueIds });
+      refetch();
     } catch (err) {
-      alert("Dry-run failed: " + (err instanceof Error ? err.message : String(err)));
+      alert("Fix failed: " + (err instanceof Error ? err.message : String(err)));
     }
     setFixBusy([]);
   }
