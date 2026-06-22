@@ -2,9 +2,10 @@ import { moduleDefs } from "../lib/modules";
 
 interface LandingProps {
   onStartFree: () => void;
+  onPricing: () => void;
 }
 
-export default function Landing({ onStartFree }: LandingProps) {
+export default function Landing({ onStartFree, onPricing }: LandingProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Hero */}
@@ -43,6 +44,9 @@ export default function Landing({ onStartFree }: LandingProps) {
               Log in
             </button>
           </div>
+          <button onClick={onPricing} className="mt-4 text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+            View pricing details &rarr;
+          </button>
         </div>
       </div>
 

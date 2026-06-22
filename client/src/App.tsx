@@ -4,9 +4,10 @@ import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Compare from "./pages/Compare";
 import Landing from "./pages/Landing";
+import Pricing from "./pages/Pricing";
 import { isProTier } from "./lib/tier";
 
-type Page = { name: "landing" } | { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string };
+type Page = { name: "landing" } | { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string } | { name: "pricing" };
 
 export default function App() {
   const [isPro] = useState(isProTier());
@@ -57,6 +58,15 @@ export default function App() {
                 {page.name !== "landing" && <span className={`ml-2 px-1.5 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle ${isPro ? "pro-badge" : "bg-emerald-500"}`}>{isPro ? "Pro" : "Free Tier"}</span>}
               </div>
           </button>
+          <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              isPro ? "text-indigo-300 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
+            }`}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Pricing
+          </button>
           {page.name !== "landing" && <nav className="flex items-center gap-1">
               <button disabled={!isPro}
                 onClick={() => setPage({ name: "home" })}
@@ -79,11 +89,12 @@ export default function App() {
       </header>
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-fadeIn">
-          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} />}
+          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} onPricing={() => { setPrevPage(page); setPage({ name: "pricing" }); }} />}
           {page.name === "home" && <Home isPro={isPro} onAuditStarted={(id) => setPage({ name: "dashboard", auditId: id })} />}
           {page.name === "dashboard" && <Dashboard auditId={page.auditId} onBack={() => setPage({ name: "home" })} />}
           {page.name === "history" && <History onSelectAudit={(id) => setPage({ name: "dashboard", auditId: id })} onCompare={(id1, id2) => setPage({ name: "compare", id1, id2 })} onBack={() => setPage(prevPage)} />}
           {page.name === "compare" && <Compare id1={page.id1} id2={page.id2} onBack={() => setPage({ name: "history" })} />}
+          {page.name === "pricing" && <Pricing isPro={isPro} onBack={() => setPage(prevPage)} />}
         </div>
       </main>
 
