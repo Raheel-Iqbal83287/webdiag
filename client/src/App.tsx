@@ -42,7 +42,7 @@ export default function App() {
   }, [isPro]);
 
   return (
-    <div className={`min-h-screen ${isPro ? "bg-slate-950" : page.name === "landing" ? "bg-white" : "bg-slate-100"}`}>
+    <div className={`min-h-screen ${isPro ? "bg-slate-950" : "bg-slate-100"}`}>
       {page.name !== "landing" && (
       <header className={`sticky top-0 z-50 transition-all ${isPro ? "pro-header" : "bg-white border-b border-slate-200"}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
