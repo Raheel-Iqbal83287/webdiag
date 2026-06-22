@@ -16,6 +16,7 @@ export default function App() {
   const [isPro] = useState(isProTier());
   const [page, setPage] = useState<Page>({ name: "landing" });
   const [prevPage, setPrevPage] = useState<Page>({ name: "landing" });
+  const [pricingBackTo, setPricingBackTo] = useState<Page>({ name: "landing" });
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function App() {
               </div>
           </div>
           <div className="flex items-center gap-2">
-            {page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
+            {page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <button onClick={() => { const p = page; setPrevPage(p); setPricingBackTo(p); setPage({ name: "pricing" }); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 isPro ? "text-indigo-300 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
               }`}>
@@ -130,12 +131,12 @@ export default function App() {
       </header>
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-fadeIn">
-          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} onPricing={() => { setPrevPage(page); setPage({ name: "pricing" }); }} onLogin={() => { setPrevPage(page); setPage({ name: "login" }); }} onSignup={() => { setPrevPage(page); setPage({ name: "signup" }); }} />}
+          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} onPricing={() => { const p = page; setPrevPage(p); setPricingBackTo(p); setPage({ name: "pricing" }); }} onLogin={() => { setPrevPage(page); setPage({ name: "login" }); }} onSignup={() => { setPrevPage(page); setPage({ name: "signup" }); }} />}
           {page.name === "home" && <Home isPro={isPro} onAuditStarted={(id) => setPage({ name: "dashboard", auditId: id })} />}
           {page.name === "dashboard" && <Dashboard auditId={page.auditId} onBack={() => setPage({ name: "home" })} />}
           {page.name === "history" && <History onSelectAudit={(id) => setPage({ name: "dashboard", auditId: id })} onCompare={(id1, id2) => setPage({ name: "compare", id1, id2 })} onBack={() => setPage(prevPage)} />}
           {page.name === "compare" && <Compare id1={page.id1} id2={page.id2} onBack={() => setPage({ name: "history" })} />}
-          {page.name === "pricing" && <Pricing isPro={isPro} onBack={() => setPage(page.name === "pricing" ? prevPage : prevPage)} />}
+          {page.name === "pricing" && <Pricing isPro={isPro} onBack={() => setPage(pricingBackTo)} />}
           {page.name === "login" && <LoginPage isPro={isPro} onSuccess={() => setPage({ name: "home" })} onBack={() => setPage(prevPage)} />}
           {page.name === "signup" && <LoginPage isPro={isPro} defaultMode="signup" onSuccess={() => setPage({ name: "home" })} onBack={() => setPage(prevPage)} />}
         </div>
