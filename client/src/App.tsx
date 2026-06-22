@@ -24,6 +24,22 @@ export default function App() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    if (isPro) return;
+    const onContextMenu = (e: MouseEvent) => { e.preventDefault(); };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) || (e.ctrlKey && e.key === "U")) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("contextmenu", onContextMenu);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("contextmenu", onContextMenu);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isPro]);
+
   return (
     <div className={`min-h-screen ${isPro ? "bg-slate-950" : "bg-slate-100"}`}>
       <header className={`sticky top-0 z-50 transition-all ${isPro ? "pro-header" : "bg-white border-b border-slate-200"}`}>
