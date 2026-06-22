@@ -4,9 +4,10 @@ interface LandingProps {
   onStartFree: () => void;
   onPricing: () => void;
   onLogin: () => void;
+  onSignup: () => void;
 }
 
-export default function Landing({ onStartFree, onPricing, onLogin }: LandingProps) {
+export default function Landing({ onStartFree, onPricing, onLogin, onSignup }: LandingProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Hero */}
@@ -36,7 +37,7 @@ export default function Landing({ onStartFree, onPricing, onLogin }: LandingProp
           <h3 className="text-lg font-bold text-slate-800 mb-2">Start auditing your website today</h3>
           <p className="text-slate-500 text-sm mb-6 max-w-md mx-auto">Upload your website folder and get a comprehensive diagnostic report across 16 audit modules.</p>
           <div className="flex items-center justify-center gap-4">
-            <button onClick={onStartFree}
+            <button onClick={onSignup}
               className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-md shadow-indigo-200 hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all active:scale-[0.98]">
               Start Free
             </button>

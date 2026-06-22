@@ -5,11 +5,12 @@ interface LoginProps {
   onSuccess: () => void;
   onBack: () => void;
   isPro: boolean;
+  defaultMode?: "login" | "signup";
 }
 
-export default function Login({ onSuccess, onBack, isPro }: LoginProps) {
+export default function Login({ onSuccess, onBack, isPro, defaultMode = "login" }: LoginProps) {
   const { login } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(defaultMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -9,7 +9,7 @@ import LoginPage from "./pages/Login";
 import { useAuth } from "./lib/auth";
 import { isProTier } from "./lib/tier";
 
-type Page = { name: "landing" } | { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string } | { name: "pricing" } | { name: "login" };
+type Page = { name: "landing" } | { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string } | { name: "pricing" } | { name: "login" } | { name: "signup" };
 
 export default function App() {
   const { user, loading, logout } = useAuth();
@@ -80,11 +80,11 @@ export default function App() {
             <div>
                 <span className={`font-bold text-lg tracking-tight ${isPro ? "text-white" : "text-slate-800"}`}>WebDiag</span>
                 <span className={`text-xs ml-2 font-medium ${isPro ? "text-indigo-300" : "text-slate-400"}`}>Website Diagnostics</span>
-                {page.name !== "landing" && page.name !== "pricing" && page.name !== "login" && <span className={`ml-2 px-1.5 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle ${isPro ? "pro-badge" : "bg-emerald-500"}`}>{isPro ? "Pro" : "Free Tier"}</span>}
+                {page.name !== "landing" && page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <span className={`ml-2 px-1.5 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded align-middle ${isPro ? "pro-badge" : "bg-emerald-500"}`}>{isPro ? "Pro" : "Free Tier"}</span>}
               </div>
           </button>
           <div className="flex items-center gap-2">
-            {page.name !== "pricing" && page.name !== "login" && <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
+            {page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <button onClick={() => { setPrevPage(page); setPage({ name: "pricing" }); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 isPro ? "text-indigo-300 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
               }`}>
@@ -93,7 +93,7 @@ export default function App() {
               </svg>
               Pricing
             </button>}
-            {page.name !== "landing" && page.name !== "pricing" && page.name !== "login" && <nav className="flex items-center gap-1">
+            {page.name !== "landing" && page.name !== "pricing" && page.name !== "login" && page.name !== "signup" && <nav className="flex items-center gap-1">
                 <button disabled={!isPro}
                   onClick={() => setPage({ name: "home" })}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${!isPro ? "text-slate-300 cursor-not-allowed" : isPro ? (page.name === "home" ? "bg-indigo-500/20 text-indigo-300 shadow-sm" : "text-indigo-200 hover:text-white hover:bg-white/5") : page.name === "home" ? "bg-indigo-50 text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"}`}>
@@ -119,7 +119,7 @@ export default function App() {
                   Logout
                 </button>
               </div>
-            ) : page.name !== "login" && page.name !== "landing" && (
+            ) : page.name !== "login" && page.name !== "signup" && page.name !== "landing" && (
               <button onClick={() => { setPrevPage(page); setPage({ name: "login" }); }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isPro ? "text-indigo-300 hover:text-white hover:bg-white/5" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"}`}>
                 Log in
@@ -130,13 +130,14 @@ export default function App() {
       </header>
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-fadeIn">
-          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} onPricing={() => { setPrevPage(page); setPage({ name: "pricing" }); }} onLogin={() => { setPrevPage(page); setPage({ name: "login" }); }} />}
+          {page.name === "landing" && <Landing onStartFree={() => setPage({ name: "home" })} onPricing={() => { setPrevPage(page); setPage({ name: "pricing" }); }} onLogin={() => { setPrevPage(page); setPage({ name: "login" }); }} onSignup={() => { setPrevPage(page); setPage({ name: "signup" }); }} />}
           {page.name === "home" && <Home isPro={isPro} onAuditStarted={(id) => setPage({ name: "dashboard", auditId: id })} />}
           {page.name === "dashboard" && <Dashboard auditId={page.auditId} onBack={() => setPage({ name: "home" })} />}
           {page.name === "history" && <History onSelectAudit={(id) => setPage({ name: "dashboard", auditId: id })} onCompare={(id1, id2) => setPage({ name: "compare", id1, id2 })} onBack={() => setPage(prevPage)} />}
           {page.name === "compare" && <Compare id1={page.id1} id2={page.id2} onBack={() => setPage({ name: "history" })} />}
           {page.name === "pricing" && <Pricing isPro={isPro} onBack={() => setPage(prevPage)} />}
           {page.name === "login" && <LoginPage isPro={isPro} onSuccess={() => setPage({ name: "home" })} onBack={() => setPage(prevPage)} />}
+          {page.name === "signup" && <LoginPage isPro={isPro} defaultMode="signup" onSuccess={() => setPage({ name: "home" })} onBack={() => setPage(prevPage)} />}
         </div>
       </main>
 
