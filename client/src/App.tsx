@@ -9,10 +9,9 @@ import { isProTier } from "./lib/tier";
 type Page = { name: "landing" } | { name: "home" } | { name: "dashboard"; auditId: string } | { name: "history" } | { name: "compare"; id1: string; id2: string };
 
 export default function App() {
-  const [page, setPage] = useState<Page>({ name: "landing" });
-  const [prevPage, setPrevPage] = useState<Page>({ name: "landing" });
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [isPro] = useState(isProTier());
+  const [page, setPage] = useState<Page>(isPro ? { name: "home" } : { name: "landing" });
+  const [prevPage, setPrevPage] = useState<Page>(isPro ? { name: "home" } : { name: "landing" });
 
   const navigateToHistory = () => {
     setPrevPage(page);
